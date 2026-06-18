@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Dr. Alejandro Silva</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+  height: 100%;
+  background: #000;
+  font-family: 'Inter', Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* ── CÁMARA FONDO COMPLETO ── */
+#camBg {
+  position: fixed;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+/* ── LAYOUT: columna que ocupa toda la pantalla ── */
+.layout {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+/* área superior: espacio libre para pico de botella */
+.top-space {
+  flex: 0 0 28vh;
+}
+
+/* área del video: ocupa el centro-bajo */
+.video-wrap {
+  flex: 0 0 44vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-wrap video {
+  width: 95%;
+  max-width: 380px;
+  mix-blend-mode: screen;
+  position: absolute;
+  transition: opacity 0.4s;
+}
+
+#vid-holo   { opacity: 1; z-index: 2; }
+#vid-unfold { opacity: 0; z-index: 3; pointer-events: none; }
+
+/* ── FRAME INFERIOR ── */
+.bottom-frame {
+  flex: 1;
+  background: linear-gradient(180deg, rgba(8,16,42,0.93) 0%, rgba(5,10,28,0.97) 100%);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0,160,255,0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px 12px;
+  gap: 8px;
+}
+
+/* fila: Contacto | countdown | Ubicación */
+.main-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-side {
+  flex: 0 0 auto;
+  padding: 9px 16px;
+  border-radius: 20px;
+  font-size: 12px; font-weight: 700;
+  text-decoration: none; color: #fff;
+  background: linear-gradient(135deg, #1a5cb0, #0d3d7a);
+  box-shadow: 0 3px 10px rgba(0,80,180,0.35);
+  white-space: nowrap;
+  transition: transform 0.15s;
+}
+.btn-side:active { transform: scale(0.95); }
+
+.countdown-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.cd-label {
+  color: #5080b0; font-size: 9px;
+  font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.cd-time {
+  font-size: 20px; font-weight: 800;
+  color: #fff; letter-spacing: 2px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.cd-time.urgent { color: #ff4444; animation: pulse 0.8s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.cd-sub { font-size: 9px; color: #4060a0; text-align: center; }
+.cd-sub.hot { color: #ff6644; font-weight: 700; }
+
+.btn-cita {
+  display: block;
+  width: 100%; max-width: 220px;
+  padding: 10px;
+  border-radius: 24px;
+  font-size: 13px; font-weight: 800;
+  text-align: center; text-decoration: none; color: #fff;
+  background: linear-gradient(135deg, #0d2e6e, #091d4a);
+  box-shadow: 0 4px 16px rgba(0,30,100,0.5), 0 0 0 1px rgba(0,150,255,0.2);
+  letter-spacing: 0.5px;
+  transition: transform 0.15s;
+}
+.btn-cita:active { transform: scale(0.97); }
+
+.info-panel {
+  width: 100%; max-height: 0; overflow: hidden;
+  transition: max-height 0.35s ease;
+  text-align: center;
+}
+.info-panel.open { max-height: 50px; }
+.info-content { font-size: 12px; color: #80aae0; line-height: 1.6; }
+.info-content a { color: #4da6ff; text-decoration: none; font-weight: 600; }
+
+.expired-msg {
+  display: none; color: #ff4444;
+  font-size: 12px; font-weight: 700; text-align: center;
+}
+
+/* sin cámara: fondo oscuro degradado */
+.no-cam-bg {
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, #0a1a3a 0%, #000 70%);
+  z-index: 0;
+}
+</style>
+</head>
+<body>
+
+<div class="no-cam-bg" id="noCamBg"></div>
+<video id="camBg" autoplay playsinline muted></video>
+
+<div class="layout">
+
+  <!-- espacio superior para pico de botella -->
+  <div class="top-space"></div>
+
+  <!-- videos holográficos -->
+  <div class="video-wrap">
+    <video id="vid-holo"
+      src="https://raw.githubusercontent.com/alexjassop-gh/AR/main/1%20label%20girando.mp4"
+      autoplay loop muted playsinline preload="auto">
+    </video>
+    <video id="vid-unfold"
+      src="https://raw.githubusercontent.com/alexjassop-gh/AR/main/2%20label%20unfolds%20fondo%20negro.mp4"
+      muted playsinline preload="auto">
+    </video>
+  </div>
+
+  <!-- frame inferior -->
+  <div class="bottom-frame">
+
+    <div class="main-row">
+      <a class="btn-side" href="https://wa.me/528712345528?text=Hola%20Dr.%20Silva,%20vi%20su%20promoción%20de%20consulta%20gratis" onclick="showInfo('contacto');return true;">Contacto</a>
+
+      <div class="countdown-center">
+        <div class="cd-label">⏰ Oferta termina en</div>
+        <div class="cd-time" id="cdTime">02:00:00</div>
+        <div class="cd-sub" id="cdSub">¡Agenda antes de que expire!</div>
+      </div>
+
+      <a class="btn-side" href="https://maps.google.com/?q=Torreón,Coahuila,Mexico" target="_blank" onclick="showInfo('ubicacion');return true;">Ubicación</a>
+    </div>
+
+    <a class="btn-cita" href="https://calendly.com" target="_blank">Agendar Cita</a>
+
+    <div class="info-panel" id="infoPanel">
+      <div class="info-content" id="infoContent"></div>
+    </div>
+
+    <div class="expired-msg" id="expiredMsg">⚠️ Oferta expirada</div>
+
+  </div>
+</div>
+
+<script>
+// ── CÁMARA ──
+navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+  .then(stream => {
+    const cam = document.getElementById('camBg');
+    cam.srcObject = stream;
+    document.getElementById('noCamBg').style.display = 'none';
+  })
+  .catch(() => {
+    // sin cámara — fondo oscuro queda
+  });
+
+// ── VIDEO: auto-transición después de 1 vuelta (~6s) ──
+const vidHolo   = document.getElementById('vid-holo');
+const vidUnfold = document.getElementById('vid-unfold');
+let transitioned = false;
+
+function doTransition() {
+  if (transitioned) return;
+  transitioned = true;
+
+  vidHolo.style.opacity = '0';
+  setTimeout(() => {
+    vidHolo.pause();
+    vidUnfold.style.opacity = '1';
+    vidUnfold.style.pointerEvents = 'auto';
+    vidUnfold.currentTime = 0;
+    vidUnfold.play();
+  }, 400);
+}
+
+// esperar que holograma lleve ~6s (1 vuelta completa)
+vidHolo.addEventListener('canplay', () => {
+  setTimeout(doTransition, 6000);
+}, { once: true });
+
+// fallback si canplay no dispara a tiempo
+setTimeout(doTransition, 7000);
+
+// ── COUNTDOWN ──
+const endTime = Date.now() + 2 * 60 * 60 * 1000;
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function tick() {
+  const rem = endTime - Date.now();
+  const cdTime = document.getElementById('cdTime');
+  const cdSub  = document.getElementById('cdSub');
+  if (rem <= 0) {
+    cdTime.textContent = '00:00:00';
+    document.getElementById('expiredMsg').style.display = 'block';
+    cdSub.style.display = 'none';
+    return;
+  }
+  const h = Math.floor(rem / 3600000);
+  const m = Math.floor((rem % 3600000) / 60000);
+  const s = Math.floor((rem % 60000) / 1000);
+  cdTime.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+  const urgent = rem < 600000;
+  cdTime.classList.toggle('urgent', urgent);
+  if (urgent) { cdSub.textContent = '🔴 ¡Menos de 10 min!'; cdSub.classList.add('hot'); }
+  setTimeout(tick, 1000);
+}
+tick();
+
+// ── INFO PANELS ──
+let currentPanel = null;
+function showInfo(type) {
+  const panel   = document.getElementById('infoPanel');
+  const content = document.getElementById('infoContent');
+  const infos = {
+    contacto: '📱 <a href="https://wa.me/528712345528">+52 871 234 5528</a> · WhatsApp',
+    ubicacion: '📍 Torreón, Coah. · <a href="https://maps.google.com/?q=Torreón,Coahuila,Mexico" target="_blank">Abrir Maps</a>'
+  };
+  if (currentPanel === type) { panel.classList.remove('open'); currentPanel = null; return; }
+  content.innerHTML = infos[type] || '';
+  panel.classList.add('open');
+  currentPanel = type;
+}
+</script>
+</body>
+</html>
