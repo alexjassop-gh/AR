@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Dr. Alejandro Silva</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; overflow:hidden; background:#000; font-family:'Inter',Arial,sans-serif; }
+
+#camBg {
+  position:fixed; inset:0;
+  width:100%; height:100%;
+  object-fit:cover; z-index:0;
+}
+
+/* dimmer exacto al video */
+.video-dimmer {
+  position:fixed;
+  left:50%; transform:translateX(-50%);
+  width:92%; max-width:400px;
+  z-index:1;
+  background:rgba(0,0,0,0.5);
+  border-radius:10px;
+  overflow:hidden; /* recorta watermark */
+}
+
+/* tapa watermark Kling — esquina inferior derecha */
+.wm-cover {
+  position:absolute;
+  bottom:0; right:0;
+  width:80px; height:24px;
+  background:rgba(0,0,0,0.85);
+  z-index:3;
+}
+
+#vid-holo, #vid-unfold {
+  position:fixed;
+  left:50%; transform:translateX(-50%);
+  width:92%; max-width:400px;
+  z-index:2;
+  mix-blend-mode:screen;
+  transition:opacity 0.4s;
+}
+#vid-holo   { opacity:1; }
+#vid-unfold { opacity:0; pointer-events:none; }
+
+/* iconos */
+.icon-row {
+  position:fixed;
+  left:0; right:0;
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+  padding:0 40px;
+  z-index:5;
+}
+.icon-btn {
+  display:flex; flex-direction:column;
+  align-items:center; text-decoration:none; cursor:pointer;
+}
+.icon-circle {
+  width:48px; height:48px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px;
+  background:rgba(0,0,0,0.4);
+  border:1.5px solid rgba(255,255,255,0.4);
+  backdrop-filter:blur(4px);
+  transition:transform 0.15s;
+}
+.icon-btn:active .icon-circle { transform:scale(0.9); }
+
+/* pin SVG personalizado */
+.pin-svg { width:26px; height:26px; }
+
+/* timer ring alrededor del calendario */
+.timer-icon {
+  position:relative; width:80px; height:80px;
+  display:flex; align-items:center; justify-content:center;
+}
+.timer-icon svg {
+  position:absolute; inset:0;
+  transform:rotate(-90deg);
+}
+.ring-bg { fill:none; stroke:rgba(255,255,255,0.12); stroke-width:4; }
+.ring-progress {
+  fill:none; stroke:#00cfff; stroke-width:4;
+  stroke-linecap:round;
+  transition:stroke-dashoffset 1s linear;
+}
+.ring-progress.urgent { stroke:#ff3333; }
+.cal-emoji { font-size:26px; z-index:1; filter:drop-shadow(0 0 4px rgba(0,200,255,0.6)); }
+
+/* countdown */
+.cd-block {
+  position:fixed;
+  left:50%; transform:translateX(-50%);
+  z-index:5; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+}
+.cd-time {
+  font-size:20px; font-weight:800; color:#fff;
+  font-variant-numeric:tabular-nums; letter-spacing:2px;
+  text-shadow:0 0 8px #000, 0 1px 4px #000;
+  -webkit-text-stroke:0.5px rgba(0,0,0,0.7);
+}
+.cd-time.urgent { color:#ff3333; animation:blink .8s infinite; }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.cd-label {
+  font-size:9px; color:rgba(255,255,255,0.55); font-weight:600;
+  letter-spacing:1px; text-transform:uppercase;
+  text-shadow:0 1px 3px #000;
+}
+.cd-sub {
+  font-size:11px; color:#fff; font-weight:700;
+  text-shadow:0 1px 4px rgba(0,0,0,0.95);
+  white-space:nowrap;
+}
+.cd-sub.hot { color:#ff8844; }
+</style>
+</head>
+<body>
+
+<video id="camBg" autoplay playsinline muted></video>
+
+<div class="video-dimmer" id="dimmer">
+  <div class="wm-cover"></div>
+</div>
+
+<video id="vid-holo"
+  src="https://raw.githubusercontent.com/alexjassop-gh/AR/main/1%20label%20girando.mp4"
+  autoplay loop muted playsinline preload="auto">
+</video>
+<video id="vid-unfold"
+  src="https://raw.githubusercontent.com/alexjassop-gh/AR/main/2%20label%20unfolds%20fondo%20negro.mp4"
+  muted playsinline preload="auto">
+</video>
+
+<div class="icon-row" id="iconRow">
+
+  <a class="icon-btn" href="https://wa.me/528712345528?text=Hola%20Dr.%20Silva,%20vi%20su%20promoción%20de%20consulta%20gratis">
+    <div class="icon-circle">📞</div>
+  </a>
+
+  <a class="icon-btn" href="https://calendly.com" target="_blank">
+    <div class="timer-icon">
+      <svg viewBox="0 0 80 80" width="80" height="80">
+        <circle class="ring-bg" cx="40" cy="40" r="34"/>
+        <g id="ticks"></g>
+        <circle class="ring-progress" id="ringProgress" cx="40" cy="40" r="34"
+          stroke-dasharray="213.6" stroke-dashoffset="0"/>
+      </svg>
+      <span class="cal-emoji">📅</span>
+    </div>
+  </a>
+
+  <!-- pin 3D SVG -->
+  <a class="icon-btn" href="https://maps.google.com/?q=Torreón,Coahuila,Mexico" target="_blank">
+    <div class="icon-circle">
+      <svg class="pin-svg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="pinG" cx="35%" cy="30%" r="65%">
+            <stop offset="0%" stop-color="#ff6b6b"/>
+            <stop offset="100%" stop-color="#8b0000"/>
+          </radialGradient>
+          <radialGradient id="holeG" cx="40%" cy="35%" r="60%">
+            <stop offset="0%" stop-color="#fff"/>
+            <stop offset="100%" stop-color="#ddd"/>
+          </radialGradient>
+        </defs>
+        <!-- cuerpo del pin -->
+        <path d="M50 5 C25 5 8 22 8 45 C8 68 50 115 50 115 C50 115 92 68 92 45 C92 22 75 5 50 5Z" fill="url(#pinG)"/>
+        <!-- sombra lateral -->
+        <path d="M50 5 C75 5 92 22 92 45 C92 68 50 115 50 115 L50 5Z" fill="rgba(0,0,0,0.15)"/>
+        <!-- reflejo superior -->
+        <ellipse cx="38" cy="30" rx="14" ry="10" fill="rgba(255,255,255,0.3)" transform="rotate(-20 38 30)"/>
+        <!-- hueco central -->
+        <circle cx="50" cy="44" r="18" fill="url(#holeG)"/>
+        <circle cx="50" cy="44" r="14" fill="#8b0000"/>
+        <!-- sombra base -->
+        <ellipse cx="50" cy="112" rx="14" ry="4" fill="rgba(0,0,0,0.25)"/>
+      </svg>
+    </div>
+  </a>
+
+</div>
+
+<div class="cd-block" id="cdBlock">
+  <div class="cd-time" id="cdTime">02:00:00</div>
+  <div class="cd-label">⏰ tiempo restante</div>
+  <div class="cd-sub" id="cdSub">¡Agenda antes de que expire!</div>
+</div>
+
+<script>
+// cámara
+navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false})
+  .then(s=>document.getElementById('camBg').srcObject=s)
+  .catch(()=>{});
+
+// ticks reloj
+(function(){
+  const g=document.getElementById('ticks');
+  for(let i=0;i<12;i++){
+    const a=(i/12)*2*Math.PI-Math.PI/2;
+    const r1=29,r2=34;
+    const x1=40+r1*Math.cos(a),y1=40+r1*Math.sin(a);
+    const x2=40+r2*Math.cos(a),y2=40+r2*Math.sin(a);
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1);l.setAttribute('y1',y1);
+    l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+    l.setAttribute('stroke','rgba(255,255,255,0.4)');
+    l.setAttribute('stroke-width',i%3===0?'2.5':'1.5');
+    l.setAttribute('stroke-linecap','round');
+    g.appendChild(l);
+  }
+})();
+
+// layout dinámico
+function layout(){
+  const vw=window.innerWidth;
+  const vh2=window.innerHeight;
+  const cw=Math.min(vw*0.92,400);
+
+  // subir label: 32% desde abajo en lugar de 25%
+  const bot=Math.round(vh2*0.32);
+
+  // altura del dimmer: proporcional al video de label (aprox 5:2 ratio = 40% del ancho)
+  const dimH=Math.round(cw*0.40);
+
+  ['vid-holo','vid-unfold'].forEach(id=>{
+    const v=document.getElementById(id);
+    v.style.bottom=bot+'px';
+  });
+
+  const d=document.getElementById('dimmer');
+  d.style.bottom=bot+'px';
+  d.style.height=dimH+'px';
+
+  const iconBot=bot-68;
+  document.getElementById('iconRow').style.bottom=iconBot+'px';
+  document.getElementById('cdBlock').style.bottom=(iconBot-62)+'px';
+}
+layout();
+window.addEventListener('resize',layout);
+
+// transición auto 6s
+const vh=document.getElementById('vid-holo');
+const vu=document.getElementById('vid-unfold');
+let done=false;
+function transition(){
+  if(done)return;done=true;
+  vh.style.opacity='0';
+  setTimeout(()=>{vh.pause();vu.style.opacity='1';vu.currentTime=0;vu.play();},400);
+}
+vh.addEventListener('canplay',()=>setTimeout(transition,6000),{once:true});
+setTimeout(transition,7500);
+
+// countdown
+const TOTAL=2*60*60*1000;
+const end=Date.now()+TOTAL;
+const CIRC=2*Math.PI*34;
+const pad=n=>String(n).padStart(2,'0');
+
+function tick(){
+  const r=Math.max(0,end-Date.now());
+  const h=Math.floor(r/3600000);
+  const m=Math.floor((r%3600000)/60000);
+  const s=Math.floor((r%60000)/1000);
+  const ring=document.getElementById('ringProgress');
+  ring.style.strokeDashoffset=CIRC*(1-r/TOTAL);
+  const urgent=r<600000;
+  ring.classList.toggle('urgent',urgent);
+  const ct=document.getElementById('cdTime');
+  ct.textContent=`${pad(h)}:${pad(m)}:${pad(s)}`;
+  ct.classList.toggle('urgent',urgent);
+  const sub=document.getElementById('cdSub');
+  if(r<=0){sub.textContent='⚠️ Oferta expirada';return;}
+  if(urgent){sub.textContent='🔴 ¡Menos de 10 min!';sub.classList.add('hot');}
+  setTimeout(tick,1000);
+}
+tick();
+</script>
+</body>
+</html>
