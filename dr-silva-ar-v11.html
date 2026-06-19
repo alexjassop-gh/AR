@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Dr. Alejandro Silva</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; overflow:hidden; background:#000; font-family:'Inter',Arial,sans-serif; }
+
+#camBg {
+  position:fixed; inset:0; width:100%; height:100%;
+  object-fit:cover; z-index:0;
+}
+
+/* DOS dimmers independientes */
+.dimmer {
+  position:fixed;
+  left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,0.52);
+  border-radius:10px;
+  z-index:1;
+  transition:opacity 0.4s;
+  overflow:hidden;
+}
+.wm-cover {
+  position:absolute; bottom:0; right:0;
+  width:90px; height:26px;
+  background:rgba(0,0,0,0.9);
+}
+
+#vid-holo, #vid-unfold {
+  position:fixed;
+  left:50%; transform:translateX(-50%);
+  z-index:2;
+  mix-blend-mode:screen;
+  transition:opacity 0.4s;
+}
+#vid-holo   { opacity:1; }
+#vid-unfold { opacity:0; pointer-events:none; }
+
+.icon-row {
+  position:fixed; left:0; right:0;
+  display:flex; justify-content:space-around; align-items:center;
+  padding:0 40px; z-index:5;
+}
+.icon-btn {
+  display:flex; flex-direction:column;
+  align-items:center; text-decoration:none; cursor:pointer;
+}
+.icon-circle {
+  width:48px; height:48px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:22px;
+  background:rgba(0,0,0,0.4);
+  border:1.5px solid rgba(255,255,255,0.4);
+  backdrop-filter:blur(4px);
+  transition:transform 0.15s;
+}
+.icon-btn:active .icon-circle { transform:scale(0.9); }
+
+.timer-icon {
+  position:relative; width:80px; height:80px;
+  display:flex; align-items:center; justify-content:center;
+}
+.timer-icon svg { position:absolute; inset:0; transform:rotate(-90deg); }
+.ring-bg { fill:none; stroke:rgba(255,255,255,0.12); stroke-width:4; }
+.ring-progress { fill:none; stroke:#00cfff; stroke-width:4; stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+.ring-progress.urgent { stroke:#ff3333; }
+.cal-emoji { font-size:26px; z-index:1; filter:drop-shadow(0 0 4px rgba(0,200,255,0.6)); }
+
+.cd-block {
+  position:fixed; left:50%; transform:translateX(-50%);
+  z-index:5; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+}
+.cd-time {
+  font-size:20px; font-weight:800; color:#fff;
+  font-variant-numeric:tabular-nums; letter-spacing:2px;
+  text-shadow:0 0 8px #000, 0 1px 4px #000;
+  -webkit-text-stroke:0.5px rgba(0,0,0,0.7);
+}
+.cd-time.urgent { color:#ff3333; animation:blink .8s infinite; }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.cd-label { font-size:9px; color:rgba(255,255,255,0.55); font-weight:600; letter-spacing:1px; text-transform:uppercase; text-shadow:0 1px 3px #000; }
+.cd-sub { font-size:11px; color:#fff; font-weight:700; text-shadow:0 1px 4px rgba(0,0,0,0.95); white-space:nowrap; }
+.cd-sub.hot { color:#ff8844; }
+</style>
+</head>
+<body>
+
+<video id="camBg" autoplay playsinline muted></video>
+
+<!-- dimmer para holograma (más cuadrado) -->
+<div class="dimmer" id="dimmerHolo"><div class="wm-cover"></div></div>
+<!-- dimmer para label (más horizontal) -->
+<div class="dimmer" id="dimmerLabel" style="opacity:0"><div class="wm-cover"></div></div>
+
+<video id="vid-holo"
+  src="https://raw.githubusercontent.com/alexjassop-gh/AR/main/1%20label%20girando.mp4"
+  autoplay loop muted playsinline preload="auto">
+</video>
+<video id="vid-unfold"
+  src="https://raw.githubusercontent.com/alexjassop-gh/AR/main/2%20label%20unfolds%20fondo%20negro.mp4"
+  muted playsinline preload="auto">
+</video>
+
+<div class="icon-row" id="iconRow">
+  <a class="icon-btn" href="https://wa.me/528712345528?text=Hola%20Dr.%20Silva,%20vi%20su%20promoción%20de%20consulta%20gratis">
+    <div class="icon-circle">📞</div>
+  </a>
+  <a class="icon-btn" href="https://calendly.com" target="_blank">
+    <div class="timer-icon">
+      <svg viewBox="0 0 80 80" width="80" height="80">
+        <circle class="ring-bg" cx="40" cy="40" r="34"/>
+        <g id="ticks"></g>
+        <circle class="ring-progress" id="ringProgress" cx="40" cy="40" r="34"
+          stroke-dasharray="213.6" stroke-dashoffset="0"/>
+      </svg>
+      <span class="cal-emoji">📅</span>
+    </div>
+  </a>
+  <a class="icon-btn" href="https://maps.google.com/?q=Torreón,Coahuila,Mexico" target="_blank">
+    <div class="icon-circle">
+      <svg width="26" height="30" viewBox="0 0 100 120" fill="none">
+        <defs>
+          <radialGradient id="pg" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#ff6b6b"/><stop offset="100%" stop-color="#8b0000"/></radialGradient>
+        </defs>
+        <path d="M50 5C25 5 8 22 8 45C8 68 50 115 50 115C50 115 92 68 92 45C92 22 75 5 50 5Z" fill="url(#pg)"/>
+        <path d="M50 5C75 5 92 22 92 45C92 68 50 115 50 115L50 5Z" fill="rgba(0,0,0,0.15)"/>
+        <ellipse cx="38" cy="30" rx="14" ry="10" fill="rgba(255,255,255,0.3)" transform="rotate(-20 38 30)"/>
+        <circle cx="50" cy="44" r="18" fill="white"/>
+        <circle cx="50" cy="44" r="13" fill="#8b0000"/>
+      </svg>
+    </div>
+  </a>
+</div>
+
+<div class="cd-block" id="cdBlock">
+  <div class="cd-time" id="cdTime">02:00:00</div>
+  <div class="cd-label">⏰ tiempo restante</div>
+  <div class="cd-sub" id="cdSub">¡Agenda antes de que expire!</div>
+</div>
+
+<script>
+navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false})
+  .then(s=>document.getElementById('camBg').srcObject=s).catch(()=>{});
+
+// ticks
+(function(){
+  const g=document.getElementById('ticks');
+  for(let i=0;i<12;i++){
+    const a=(i/12)*2*Math.PI-Math.PI/2;
+    const r1=29,r2=34;
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',40+r1*Math.cos(a)); l.setAttribute('y1',40+r1*Math.sin(a));
+    l.setAttribute('x2',40+r2*Math.cos(a)); l.setAttribute('y2',40+r2*Math.sin(a));
+    l.setAttribute('stroke','rgba(255,255,255,0.4)');
+    l.setAttribute('stroke-width',i%3===0?'2.5':'1.5');
+    l.setAttribute('stroke-linecap','round');
+    g.appendChild(l);
+  }
+})();
+
+// aspect ratios reales de cada video
+// holograma: aprox 16:9 pero se ve más cuadrado visualmente → usamos 1:0.75
+// label: aprox 5:2 (medido del frame de Kling)
+const HOLO_RATIO = 9/16;   // h/w
+const LABEL_RATIO = 2/5;   // h/w
+
+function layout(){
+  const vw=window.innerWidth;
+  const inh=window.innerHeight;
+  const cw=Math.min(vw*0.92,400);
+
+  const holoH = Math.round(cw * HOLO_RATIO);
+  const labelH = Math.round(cw * LABEL_RATIO);
+
+  const bot = Math.round(inh * 0.32);
+
+  // holograma
+  const vh=document.getElementById('vid-holo');
+  vh.style.bottom=bot+'px';
+  vh.style.width=cw+'px';
+  vh.style.height=holoH+'px';
+  vh.style.objectFit='contain';
+  vh.style.left='50%';
+  vh.style.transform='translateX(-50%)';
+
+  const dh=document.getElementById('dimmerHolo');
+  dh.style.bottom=bot+'px';
+  dh.style.width=cw+'px';
+  dh.style.height=holoH+'px';
+
+  // label
+  const vu=document.getElementById('vid-unfold');
+  vu.style.bottom=bot+'px';
+  vu.style.width=cw+'px';
+  vu.style.height=labelH+'px';
+  vu.style.objectFit='contain';
+  vu.style.left='50%';
+  vu.style.transform='translateX(-50%)';
+
+  const dl=document.getElementById('dimmerLabel');
+  dl.style.bottom=bot+'px';
+  dl.style.width=cw+'px';
+  dl.style.height=labelH+'px';
+
+  // iconos y countdown
+  const iconBot = bot - 68;
+  document.getElementById('iconRow').style.bottom=iconBot+'px';
+  document.getElementById('cdBlock').style.bottom=(iconBot-62)+'px';
+}
+layout();
+window.addEventListener('resize',layout);
+
+// transición
+const vh=document.getElementById('vid-holo');
+const vu=document.getElementById('vid-unfold');
+const dh=document.getElementById('dimmerHolo');
+const dl=document.getElementById('dimmerLabel');
+let done=false;
+
+function transition(){
+  if(done)return; done=true;
+  vh.style.opacity='0';
+  dh.style.opacity='0';
+  setTimeout(()=>{
+    vh.pause();
+    vu.style.opacity='1';
+    dl.style.opacity='1';
+    vu.currentTime=0;
+    vu.play();
+  },400);
+}
+vh.addEventListener('canplay',()=>setTimeout(transition,6000),{once:true});
+setTimeout(transition,7500);
+
+// countdown
+const TOTAL=2*60*60*1000, end=Date.now()+TOTAL;
+const CIRC=2*Math.PI*34;
+const pad=n=>String(n).padStart(2,'0');
+function tick(){
+  const r=Math.max(0,end-Date.now());
+  const h=Math.floor(r/3600000),m=Math.floor((r%3600000)/60000),s=Math.floor((r%60000)/1000);
+  const ring=document.getElementById('ringProgress');
+  ring.style.strokeDashoffset=CIRC*(1-r/TOTAL);
+  const urgent=r<600000;
+  ring.classList.toggle('urgent',urgent);
+  const ct=document.getElementById('cdTime');
+  ct.textContent=`${pad(h)}:${pad(m)}:${pad(s)}`;
+  ct.classList.toggle('urgent',urgent);
+  const sub=document.getElementById('cdSub');
+  if(r<=0){sub.textContent='⚠️ Oferta expirada';return;}
+  if(urgent){sub.textContent='🔴 ¡Menos de 10 min!';sub.classList.add('hot');}
+  setTimeout(tick,1000);
+}
+tick();
+</script>
+</body>
+</html>
