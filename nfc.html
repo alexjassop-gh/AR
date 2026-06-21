@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>YareCare · Medicamentos</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --verde:      #2d6a4f;
+    --verde-claro:#d4edda;
+    --verde-mid:  #52b788;
+    --rojo:       #e63946;
+    --fondo:      #f0f4f0;
+    --card:       #ffffff;
+    --texto:      #1a1a2e;
+    --suave:      #6b7280;
+    --borde:      #e5e7eb;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+  }
+
+  /* ── Pantallas ── */
+  .pantalla {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .pantalla.visible { display: flex; }
+
+  /* ── Header compacto fijo ── */
+  .header {
+    padding: 0.7rem 1rem 0.5rem;
+    background: var(--verde);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-shrink: 0;
+  }
+  .header .logo { font-size: 1.5rem; }
+  .header .header-text { flex: 1; }
+  .header h1 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0.85;
+    letter-spacing: 0.3px;
+  }
+  .header .bloque-label {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    line-height: 1.1;
+  }
+  .header .fecha {
+    font-size: 0.72rem;
+    opacity: 0.75;
+    margin-top: 0.1rem;
+  }
+  .hora-badge {
+    font-size: 1.4rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 0.3rem 0.5rem;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .hora-badge .hora-hint {
+    font-size: 0.6rem;
+    opacity: 0.7;
+    font-weight: 400;
+    letter-spacing: 0;
+    display: block;
+    text-align: center;
+    margin-top: 0.1rem;
+  }
+
+  /* ── Time picker overlay ── */
+  .time-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .time-overlay.visible { display: flex; }
+  .time-sheet {
+    background: white;
+    border-radius: 20px 20px 0 0;
+    padding: 1.2rem 1.2rem 2rem;
+    width: 100%;
+    max-width: 420px;
+  }
+  .time-sheet label {
+    font-size: 0.8rem;
+    color: var(--suave);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .time-sheet input[type="time"] {
+    width: 100%;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--verde);
+    border: 2px solid var(--verde-mid);
+    border-radius: 10px;
+    padding: 0.5rem;
+    text-align: center;
+    outline: none;
+    margin-bottom: 0.8rem;
+  }
+  .time-sheet button {
+    width: 100%;
+    padding: 0.8rem;
+    background: var(--verde);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* ── Scroll area ── */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.8rem 0.9rem 0.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Med rows ── */
+  .med-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem 0.9rem;
+    border-radius: 12px;
+    margin-bottom: 0.45rem;
+    cursor: pointer;
+    transition: background 0.12s, opacity 0.12s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    border: 2px solid transparent;
+  }
+  .med-row.activo {
+    background: var(--verde-claro);
+    border-color: var(--verde-mid);
+  }
+  .med-row.inactivo {
+    background: #f3f3f3;
+    opacity: 0.5;
+  }
+  .med-row .check {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .med-row.activo .check  { background: var(--verde); color: white; }
+  .med-row.inactivo .check { background: #ddd; color: #aaa; }
+  .med-nombre {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .med-row.inactivo .med-nombre { color: var(--suave); }
+  .med-dosis { font-size: 0.74rem; color: var(--suave); margin-top: 0.1rem; }
+  .critico-badge {
+    font-size: 0.62rem;
+    background: #fff0f0;
+    color: var(--rojo);
+    border: 1px solid #ffc9cc;
+    padding: 0.15rem 0.4rem;
+    border-radius: 20px;
+    font-weight: 700;
+    white-space: nowrap;
+    margin-left: auto;
+  }
+
+  /* ── Nota ── */
+  .nota-wrap { margin-top: 0.3rem; }
+  .nota-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--suave);
+    margin-bottom: 0.4rem;
+  }
+  .nota-input {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    color: var(--texto);
+    background: white;
+    outline: none;
+    resize: none;
+  }
+  .nota-input:focus { border-color: var(--verde-mid); }
+
+  /* ── Botón fijo abajo ── */
+  .footer-btn {
+    padding: 0.85rem 1rem;
+    flex-shrink: 0;
+    background: var(--fondo);
+    border-top: 1px solid var(--borde);
+  }
+  .btn-confirmar {
+    width: 100%;
+    padding: 0.95rem;
+    background: var(--verde);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(45,106,79,0.3);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-confirmar:active { opacity: 0.85; }
+  .btn-confirmar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Pantalla éxito ── */
+  #pantalla-exito {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    background: var(--fondo);
+  }
+  .exito-icon { font-size: 5rem; margin-bottom: 0.8rem; animation: pop 0.4s cubic-bezier(0.175,0.885,0.32,1.275); }
+  .exito-hora { font-size: 3.5rem; font-weight: 900; color: var(--verde); letter-spacing: -2px; line-height: 1; }
+  .exito-bloque { font-size: 1rem; color: var(--suave); margin: 0.3rem 0 1.2rem; }
+  .exito-meds {
+    background: white; border-radius: 12px; padding: 0.8rem 1rem;
+    width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.2rem; text-align: left;
+  }
+  .exito-med-item {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.35rem 0; font-size: 0.88rem;
+    border-bottom: 1px solid var(--borde);
+  }
+  .exito-med-item:last-child { border-bottom: none; }
+  .exito-med-item.omitido { color: var(--suave); text-decoration: line-through; }
+  .btn-cerrar {
+    padding: 0.7rem 2rem; background: var(--fondo);
+    color: var(--verde); border: 2px solid var(--verde-mid);
+    border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  }
+
+  /* ── Error ── */
+  #pantalla-error {
+    align-items: center; justify-content: center;
+    text-align: center; padding: 2rem 1.5rem; background: var(--fondo);
+  }
+  .error-icon { font-size: 4rem; margin-bottom: 1rem; }
+  .error-msg { color: var(--rojo); font-weight: 600; margin-bottom: 0.4rem; font-size: 1.05rem; }
+  .error-detail { font-size: 0.82rem; color: var(--suave); margin-bottom: 1.2rem; }
+  .btn-reintentar {
+    padding: 0.7rem 1.5rem; background: var(--rojo);
+    color: white; border: none; border-radius: 10px;
+    font-weight: 700; cursor: pointer; font-size: 0.95rem;
+  }
+
+  /* ── Inválida ── */
+  #pantalla-invalida {
+    align-items: center; justify-content: center;
+    text-align: center; padding: 2rem; background: var(--fondo);
+  }
+
+  /* ── Spinner ── */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block; vertical-align: middle; margin-right: 0.4rem;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pop  { 0% { transform: scale(0.5); } 100% { transform: scale(1); } }
+</style>
+</head>
+<body>
+
+<!-- ══ PANTALLA PRINCIPAL ══ -->
+<div class="pantalla" id="pantalla-principal">
+
+  <div class="header">
+    <div class="logo">🌿</div>
+    <div class="header-text">
+      <h1>YareCare · Medicamentos</h1>
+      <div class="bloque-label" id="bloque-label">—</div>
+      <div class="fecha" id="fecha-label">—</div>
+    </div>
+    <div class="hora-badge" onclick="abrirTimePicker()">
+      <span id="hora-display">00:00</span>
+      <span class="hora-hint">toca para editar</span>
+    </div>
+  </div>
+
+  <div class="scroll-area">
+    <div id="lista-meds"></div>
+    <div class="nota-wrap">
+      <div class="nota-label">Nota opcional</div>
+      <textarea class="nota-input" id="nota-input" rows="2"
+        placeholder="Ej: tomó con poco jugo..."></textarea>
+    </div>
+  </div>
+
+  <div class="footer-btn">
+    <button class="btn-confirmar" id="btn-confirmar" onclick="confirmar()">
+      ✅ Confirmar toma
+    </button>
+  </div>
+
+</div>
+
+<!-- ══ TIME PICKER OVERLAY ══ -->
+<div class="time-overlay" id="time-overlay" onclick="cerrarTimePicker(event)">
+  <div class="time-sheet">
+    <label>Hora de toma</label>
+    <input type="time" id="time-input" onchange="actualizarHora(this.value)">
+    <button onclick="cerrarTimePicker()">✓ Listo</button>
+  </div>
+</div>
+
+<!-- ══ PANTALLA ÉXITO ══ -->
+<div class="pantalla" id="pantalla-exito">
+  <div class="exito-icon">✅</div>
+  <div class="exito-hora" id="exito-hora">—</div>
+  <div class="exito-bloque" id="exito-bloque">—</div>
+  <div class="exito-meds" id="exito-meds-lista"></div>
+  <button class="btn-cerrar" onclick="window.close()">Cerrar</button>
+</div>
+
+<!-- ══ PANTALLA ERROR ══ -->
+<div class="pantalla" id="pantalla-error">
+  <div class="error-icon">⚠️</div>
+  <div class="error-msg" id="error-msg">No se pudo guardar</div>
+  <div class="error-detail" id="error-detail">Revisa tu conexión e intenta de nuevo.</div>
+  <button class="btn-reintentar" onclick="reintentar()">Reintentar</button>
+</div>
+
+<!-- ══ PANTALLA INVÁLIDA ══ -->
+<div class="pantalla" id="pantalla-invalida">
+  <div style="font-size:3rem;margin-bottom:1rem">🏷️</div>
+  <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem">Tag no reconocida</div>
+  <div style="color:var(--suave);font-size:0.85rem">URL inválida. Usa ?bloque=manana, tarde, o noche</div>
+</div>
+
+<script type="module">
+import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, query, where, getDocs }
+                           from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCqS4CAY86uU_ORje8SascGJIuT1RsElc0",
+  authDomain:        "yarecare-9a86b.firebaseapp.com",
+  projectId:         "yarecare-9a86b",
+  storageBucket:     "yarecare-9a86b.firebasestorage.app",
+  messagingSenderId: "997226969746",
+  appId:             "1:997226969746:web:e494c2576d74129444044b"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+const BLOQUES = {
+  manana: {
+    label: "🌅 Mañana",
+    meds: [
+      { nombre: "Sertralina 50mg",     cantidad: 1,   dosis: "1 tableta" },
+      { nombre: "Valproato 200mg",      cantidad: 0.5, dosis: "½ tableta" },
+      { nombre: "Oxcarbazepina 300mg",  cantidad: 0.5, dosis: "½ tableta", critico: true },
+      { nombre: "Metilfenidato",        cantidad: 1,   dosis: "1 tableta", nota: "Si no fue a escuela" },
+    ]
+  },
+  tarde: {
+    label: "🌤 Tarde",
+    meds: [
+      { nombre: "Hidroxicina",   cantidad: 0.25, dosis: "¼ tableta" },
+      { nombre: "Metilfenidato", cantidad: 1,    dosis: "1 tableta" },
+    ]
+  },
+  noche: {
+    label: "🌙 Noche",
+    meds: [
+      { nombre: "Valproato 200mg",     cantidad: 0.5, dosis: "½ tableta" },
+      { nombre: "Oxcarbazepina 300mg", cantidad: 1,   dosis: "1 tableta", critico: true },
+      { nombre: "Hidroxicina",         cantidad: 0.5, dosis: "½ tableta" },
+      { nombre: "Aripiprazol 7.5mg",   cantidad: 0.5, dosis: "½ tableta" },
+    ]
+  }
+};
+
+let bloqueKey     = "";
+let horaActual    = "";
+let medsActivos   = {};
+let ultimoPayload = null;
+
+function horaStr() { return new Date().toTimeString().slice(0,5); }
+function fechaStr() { return new Date().toISOString().slice(0,10); }
+function fechaLegible(str) {
+  const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const dias  = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+  const d = new Date(str + "T12:00:00");
+  return `${dias[d.getDay()]} ${d.getDate()} de ${meses[d.getMonth()]}`;
+}
+
+function mostrar(id) {
+  document.querySelectorAll(".pantalla").forEach(p => {
+    p.classList.remove("visible");
+    p.style.display = "none";
+  });
+  const el = document.getElementById(id);
+  el.style.display = "flex";
+  el.classList.add("visible");
+}
+
+function init() {
+  const params = new URLSearchParams(window.location.search);
+  bloqueKey = params.get("bloque") || "";
+  if (!BLOQUES[bloqueKey]) { mostrar("pantalla-invalida"); return; }
+
+  const bloque = BLOQUES[bloqueKey];
+  horaActual   = horaStr();
+  const fecha  = fechaStr();
+
+  document.getElementById("bloque-label").textContent = bloque.label;
+  document.getElementById("fecha-label").textContent  = fechaLegible(fecha);
+  document.getElementById("hora-display").textContent = horaActual;
+  document.getElementById("time-input").value         = horaActual;
+
+  const lista = document.getElementById("lista-meds");
+  lista.innerHTML = "";
+  bloque.meds.forEach(med => {
+    medsActivos[med.nombre] = true;
+    const row = document.createElement("div");
+    row.className = "med-row activo";
+    row.id = "med-" + med.nombre.replace(/\s/g,"_");
+    row.innerHTML = `
+      <div class="check">✓</div>
+      <div style="flex:1">
+        <div class="med-nombre">${med.nombre}</div>
+        <div class="med-dosis">${med.dosis}${med.nota ? " · " + med.nota : ""}</div>
+      </div>
+      ${med.critico ? '<span class="critico-badge">⏱ 12h</span>' : ""}
+    `;
+    row.onclick = () => toggleMed(med.nombre);
+    lista.appendChild(row);
+  });
+
+  mostrar("pantalla-principal");
+}
+
+window.toggleMed = function(nombre) {
+  medsActivos[nombre] = !medsActivos[nombre];
+  const row = document.getElementById("med-" + nombre.replace(/\s/g,"_"));
+  const chk = row.querySelector(".check");
+  if (medsActivos[nombre]) {
+    row.className = "med-row activo"; chk.textContent = "✓";
+  } else {
+    row.className = "med-row inactivo"; chk.textContent = "○";
+  }
+};
+
+window.abrirTimePicker = function() {
+  document.getElementById("time-overlay").classList.add("visible");
+};
+window.cerrarTimePicker = function(e) {
+  if (e && e.target !== document.getElementById("time-overlay")) return;
+  document.getElementById("time-overlay").classList.remove("visible");
+};
+window.actualizarHora = function(val) {
+  horaActual = val;
+  document.getElementById("hora-display").textContent = val;
+};
+
+window.confirmar = async function() {
+  const btn = document.getElementById("btn-confirmar");
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spinner"></span>Guardando…';
+
+  const bloque = BLOQUES[bloqueKey];
+  const fecha  = fechaStr();
+  const nota   = document.getElementById("nota-input").value.trim();
+
+  const meds = bloque.meds.map(m => ({
+    nombre: m.nombre, tomado: medsActivos[m.nombre] || false,
+    cantidad: m.cantidad, horaIndividual: null, sinComida: false, autonomia: false,
+  }));
+
+  const payload = {
+    fecha, bloque: bloqueKey, meds, horaReal: horaActual,
+    horasMedBloque: {}, horasIndividuales: null,
+    incidencia: false, incidenciaOpcion: "", incidenciaTexto: "",
+    fuente: "nfc", registradoPor: "roxana-nfc",
+    nota: nota || null, creadoEn: new Date().toISOString(),
+  };
+  ultimoPayload = payload;
+
+  try {
+    const q    = query(collection(db,"registros"), where("fecha","==",fecha), where("bloque","==",bloqueKey));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const ex = snap.docs[0].data();
+      const fuente = ex.fuente === "nfc" ? "otra tag NFC" : "la app YareCare";
+      if (!confirm(`Este bloque ya fue registrado hoy a las ${ex.horaReal} desde ${fuente}.\n¿Guardar de todas formas?`)) {
+        btn.disabled  = false;
+        btn.innerHTML = "✅ Confirmar toma";
+        return;
+      }
+    }
+    await addDoc(collection(db,"registros"), payload);
+    mostrarExito(bloque.label, fecha);
+  } catch(e) {
+    document.getElementById("error-msg").textContent    = "No se pudo guardar";
+    document.getElementById("error-detail").textContent = e.message || "Revisa tu conexión.";
+    mostrar("pantalla-error");
+    btn.disabled  = false;
+    btn.innerHTML = "✅ Confirmar toma";
+  }
+};
+
+function mostrarExito(bloqueLabel, fecha) {
+  document.getElementById("exito-hora").textContent   = horaActual;
+  document.getElementById("exito-bloque").textContent = `${bloqueLabel} · ${fechaLegible(fecha)}`;
+  const lista = document.getElementById("exito-meds-lista");
+  lista.innerHTML = "";
+  BLOQUES[bloqueKey].meds.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "exito-med-item" + (medsActivos[m.nombre] ? "" : " omitido");
+    div.innerHTML = `<span>${medsActivos[m.nombre] ? "✅" : "❌"}</span><span>${m.nombre}</span>`;
+    lista.appendChild(div);
+  });
+  mostrar("pantalla-exito");
+}
+
+window.reintentar = async function() {
+  if (!ultimoPayload) { init(); return; }
+  mostrar("pantalla-principal");
+  await window.confirmar();
+};
+
+init();
+</script>
+</body>
+</html>
