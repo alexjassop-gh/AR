@@ -482,7 +482,7 @@ window.confirmar = async function() {
 
   const bloque = BLOQUES[bloqueKey];
   const fecha  = fechaStr();
-  const nota   = document.getElementById("nota-input").value.trim();
+  const nota = '';
 
   const meds = bloque.meds.map(m => ({
     nombre: m.nombre, tomado: medsActivos[m.nombre] || false,
