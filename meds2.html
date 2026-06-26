@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Registro de Medicamentos</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --verde:#2d6a4f;--verde-mid:#52b788;--verde-claro:#d4edda;--verde-bg:#f0f7f3;
+  --azul:#1565c0;--azul-claro:#e3f2fd;
+  --rojo:#c62828;--rojo-claro:#fde8e8;
+  --naranja:#e65100;--naranja-claro:#fff3e0;
+  --gris1:#f5f5f5;--gris2:#e0e0e0;--gtxt:#6b7280;
+  --texto:#1a1a2e;--borde:#e5e7eb;--card:#fff;--radio:14px;
+}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--verde-bg);color:var(--texto);min-height:100%;
+  -webkit-tap-highlight-color:transparent}
+
+/* ── Pantallas ── */
+.pantalla{display:none;flex-direction:column;max-width:420px;margin:0 auto;min-height:100vh}
+.pantalla.visible{display:flex}
+
+/* ── Header ── */
+.header{background:var(--verde);color:#fff;padding:.7rem 1rem .55rem;
+  position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.18);flex-shrink:0}
+.header-top{display:flex;align-items:center;gap:.5rem}
+.header-app{font-size:.68rem;opacity:.75;letter-spacing:.08em;text-transform:uppercase}
+.header h1{font-size:1.15rem;font-weight:800;line-height:1.15;margin-top:2px}
+.header-sub{font-size:.76rem;opacity:.8;margin-top:2px}
+.persona-chip{margin-left:auto;font-size:.72rem;background:rgba(255,255,255,.2);
+  border-radius:20px;padding:.22rem .6rem;cursor:pointer;white-space:nowrap;
+  display:flex;align-items:center;gap:.3rem}
+
+/* ── Tabs ── */
+.tabs{display:flex;background:var(--verde);padding:0 .5rem 0}
+.tab{flex:1;padding:.52rem .2rem;font-size:.7rem;font-weight:700;
+  color:rgba(255,255,255,.6);border:none;background:none;cursor:pointer;
+  border-bottom:3px solid transparent;text-transform:uppercase;letter-spacing:.03em}
+.tab.activo{color:#fff;border-bottom-color:var(--verde-mid)}
+
+/* ── Scroll ── */
+.scroll-area{padding:.85rem .85rem 5.5rem;flex:1;overflow-y:auto}
+
+/* ── Sec label ── */
+.sec{font-size:.67rem;font-weight:700;color:var(--gtxt);text-transform:uppercase;
+  letter-spacing:.6px;margin:.9rem .1rem .4rem}
+
+/* ── Med card ── */
+.med-card{background:var(--card);border-radius:var(--radio);
+  box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:.45rem;
+  border:2px solid transparent;overflow:hidden}
+.med-head{display:flex;align-items:center;gap:.7rem;padding:.8rem .85rem;cursor:pointer}
+.med-head:active{background:var(--gris1)}
+.med-icon{width:40px;height:40px;border-radius:10px;background:var(--verde-claro);
+  display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0}
+.med-nombre{font-size:.95rem;font-weight:700;line-height:1.2}
+.med-sub{font-size:.76rem;color:var(--gtxt);margin-top:.1rem}
+.med-badge{margin-left:auto;font-size:.63rem;padding:.18rem .5rem;border-radius:20px;
+  font-weight:700;white-space:nowrap;flex-shrink:0}
+.b-oral{background:var(--azul-claro);color:var(--azul);border:1px solid #90caf9}
+.b-im{background:#fce4ec;color:#880e4f;border:1px solid #f48fb1}
+.b-top{background:#fff8e1;color:#f57f17;border:1px solid #ffe082}
+
+/* ── Expand ── */
+.med-expand{display:none;padding:0 .85rem .85rem;border-top:1px solid var(--borde)}
+.med-expand.open{display:block}
+.ex-label{font-size:.68rem;font-weight:700;color:var(--gtxt);
+  text-transform:uppercase;margin:.65rem 0 .3rem}
+
+/* ── Dosis calculator ── */
+.calc-box{background:var(--gris1);border-radius:10px;padding:.7rem .8rem;margin-bottom:.3rem}
+.calc-mode-row{display:flex;gap:.4rem;margin-bottom:.55rem}
+.calc-mode-btn{flex:1;padding:.38rem .3rem;border-radius:20px;border:2px solid var(--borde);
+  background:var(--card);font-size:.76rem;font-weight:700;cursor:pointer;color:var(--gtxt);text-align:center}
+.calc-mode-btn.sel{border-color:var(--verde-mid);background:var(--verde-claro);color:var(--verde)}
+.calc-row{display:flex;align-items:center;gap:.5rem}
+.calc-row input{width:80px;padding:.5rem .6rem;border:2px solid var(--borde);border-radius:8px;
+  font-size:1rem;font-weight:700;text-align:center;outline:none;font-family:inherit}
+.calc-row input:focus{border-color:var(--verde-mid)}
+.calc-row select{flex:1;padding:.5rem .6rem;border:2px solid var(--borde);border-radius:8px;
+  font-size:.88rem;outline:none;font-family:inherit;background:var(--card)}
+.calc-row select:focus{border-color:var(--verde-mid)}
+.calc-result{margin-top:.5rem;font-size:.88rem;font-weight:700;color:var(--verde);
+  min-height:1.4em;text-align:center}
+
+/* ── Hora / nota ── */
+.hora-input{width:100%;padding:.58rem .75rem;border:2px solid var(--borde);
+  border-radius:10px;font-size:.93rem;font-family:inherit;outline:none}
+.hora-input:focus{border-color:var(--verde-mid)}
+.nota-ta{width:100%;padding:.55rem .75rem;border:2px solid var(--borde);
+  border-radius:10px;font-size:.88rem;font-family:inherit;resize:none;outline:none}
+.nota-ta:focus{border-color:var(--verde-mid)}
+
+/* ── Mini hist bajo card ── */
+.mini-hist{margin-top:.4rem}
+.mhi{display:flex;gap:.4rem;padding:.22rem 0;border-bottom:1px solid var(--borde);
+  font-size:.76rem;align-items:baseline}
+.mhi:last-child{border-bottom:none}
+.mhi-quien{font-weight:700;color:var(--verde);min-width:50px}
+.mhi-dosis{flex:1;color:var(--texto)}
+.mhi-hora{color:var(--gtxt);white-space:nowrap}
+
+/* ── Btn registrar ── */
+.btn-reg{width:100%;padding:.78rem;margin-top:.65rem;background:var(--verde);
+  color:#fff;border:none;border-radius:10px;font-size:.93rem;font-weight:800;cursor:pointer}
+.btn-reg:active{opacity:.85}
+.btn-reg:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Historial tab ── */
+.hist-filter-row{display:flex;gap:.4rem;margin-bottom:.6rem;flex-wrap:wrap}
+.hf-btn{padding:.35rem .7rem;border-radius:20px;border:2px solid var(--borde);
+  background:var(--card);font-size:.76rem;font-weight:700;cursor:pointer;color:var(--gtxt)}
+.hf-btn.sel{border-color:var(--verde-mid);background:var(--verde-claro);color:var(--verde)}
+.hf-select{flex:1;min-width:100px;padding:.35rem .6rem;border:2px solid var(--borde);
+  border-radius:20px;font-size:.76rem;font-family:inherit;outline:none;background:var(--card)}
+.log-item{background:var(--card);border-radius:10px;padding:.65rem .8rem;
+  margin-bottom:.38rem;box-shadow:0 1px 3px rgba(0,0,0,.06);
+  display:flex;gap:.55rem;align-items:flex-start;cursor:pointer}
+.log-item:active{opacity:.8}
+.li-icon{font-size:1.1rem;flex-shrink:0;margin-top:.1rem}
+.li-nombre{font-size:.88rem;font-weight:700}
+.li-dosis{font-size:.8rem;color:var(--gtxt)}
+.li-meta{font-size:.7rem;color:var(--gtxt);margin-top:.12rem}
+.li-right{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;flex-shrink:0}
+.li-badge{font-size:.68rem;font-weight:700;padding:.18rem .48rem;border-radius:20px;
+  background:var(--verde-claro);color:var(--verde);border:1px solid #a8d5b5}
+.li-editado{font-size:.62rem;color:var(--gtxt)}
+
+/* ── Docs tab ── */
+.doc-item{background:var(--card);border-radius:10px;padding:.7rem .85rem;
+  margin-bottom:.4rem;box-shadow:0 1px 3px rgba(0,0,0,.06);
+  display:flex;gap:.7rem;align-items:center;cursor:pointer}
+.doc-icon{width:44px;height:44px;border-radius:8px;background:var(--azul-claro);
+  display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+.doc-nombre{font-size:.88rem;font-weight:700}
+.doc-meta{font-size:.74rem;color:var(--gtxt);margin-top:.15rem}
+.btn-drive{width:100%;padding:.82rem;background:var(--azul);color:#fff;
+  border:none;border-radius:10px;font-size:.92rem;font-weight:800;cursor:pointer;margin-top:.5rem}
+
+/* ── Agregar med tab ── */
+.f-label{font-size:.7rem;font-weight:700;color:var(--gtxt);text-transform:uppercase;
+  letter-spacing:.4px;display:block;margin:.8rem 0 .3rem}
+.f-label:first-child{margin-top:0}
+.f-input,.f-select,.f-ta{width:100%;padding:.65rem .8rem;border:2px solid var(--borde);
+  border-radius:10px;font-size:.93rem;font-family:inherit;outline:none;
+  color:var(--texto);background:var(--card)}
+.f-input:focus,.f-select:focus,.f-ta:focus{border-color:var(--verde-mid)}
+.f-ta{resize:vertical;min-height:65px}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.1rem}
+.chip{padding:.4rem .7rem;border-radius:20px;border:2px solid var(--borde);
+  background:var(--gris1);font-size:.8rem;font-weight:600;cursor:pointer;color:var(--texto)}
+.chip.sel{border-color:var(--verde-mid);background:var(--verde-claro);color:var(--verde)}
+
+/* ── Dosis list en form ── */
+.dosis-list{margin-top:.3rem}
+.dosis-row{display:flex;flex-direction:column;gap:.25rem;margin-bottom:.5rem;
+  background:var(--gris1);border-radius:10px;padding:.5rem .6rem}
+.dosis-row-top{display:flex;align-items:center;gap:.4rem}
+.dosis-row input{flex:1;padding:.48rem .65rem;border:2px solid var(--borde);
+  border-radius:8px;font-size:.9rem;font-family:inherit;outline:none;background:var(--card)}
+.dosis-row input:focus{border-color:var(--verde-mid)}
+.dosis-tipo-row{display:flex;gap:.3rem;margin-top:.1rem}
+.dosis-tipo-btn{flex:1;padding:.28rem .3rem;border-radius:20px;border:2px solid var(--borde);
+  background:var(--card);font-size:.7rem;font-weight:700;cursor:pointer;
+  color:var(--gtxt);text-align:center}
+.dosis-tipo-btn.sel{border-color:var(--verde-mid);background:var(--verde-claro);color:var(--verde)}
+.btn-del-dosis{width:26px;height:26px;border-radius:50%;border:none;
+  background:var(--rojo-claro);color:var(--rojo);font-size:1rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-add-dosis{padding:.42rem .9rem;border-radius:20px;border:2px dashed var(--borde);
+  background:none;font-size:.8rem;cursor:pointer;color:var(--gtxt);margin-top:.1rem}
+.btn-save-med{width:100%;padding:.88rem;background:var(--verde);color:#fff;
+  border:none;border-radius:10px;font-size:.97rem;font-weight:800;cursor:pointer;margin-top:.6rem}
+.btn-del-med{width:100%;padding:.75rem;background:var(--rojo-claro);color:var(--rojo);
+  border:2px solid #f5c6c6;border-radius:10px;font-size:.88rem;font-weight:700;
+  cursor:pointer;margin-top:.45rem;display:none}
+
+/* ── Overlays ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+  z-index:100;align-items:flex-end;justify-content:center}
+.overlay.visible{display:flex}
+.sheet{background:#fff;border-radius:20px 20px 0 0;padding:1.3rem 1.1rem 2rem;
+  width:100%;max-width:420px;max-height:88vh;overflow-y:auto}
+.sheet-title{font-size:.97rem;font-weight:800;color:var(--verde);margin-bottom:.9rem}
+.btn-cancel{width:100%;padding:.75rem;border:2px solid var(--borde);border-radius:10px;
+  background:none;font-size:.88rem;cursor:pointer;color:var(--gtxt);font-weight:600;margin-top:.5rem}
+.btn-confirm{width:100%;padding:.8rem;background:var(--verde);color:#fff;
+  border:none;border-radius:10px;font-size:.9rem;font-weight:800;cursor:pointer;margin-top:.45rem}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%);
+  background:#1a1a2e;color:#fff;padding:.6rem 1.1rem;border-radius:20px;
+  font-size:.86rem;font-weight:600;z-index:200;opacity:0;transition:opacity .2s;
+  pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.toast.visible{opacity:1}
+
+/* ── Éxito ── */
+#pant-exito{align-items:center;justify-content:center;text-align:center;
+  padding:2rem 1.5rem;gap:.45rem;background:var(--verde-bg)}
+.ex-icon{font-size:5rem;animation:pop .4s cubic-bezier(.175,.885,.32,1.275)}
+.ex-hora{font-size:2.7rem;font-weight:900;color:var(--verde);letter-spacing:-2px}
+.ex-label{font-size:.97rem;color:var(--gtxt)}
+.ex-dosis{font-size:1.25rem;font-weight:800;color:var(--verde-mid)}
+.btn-volver{margin-top:1rem;padding:.65rem 1.8rem;background:none;
+  color:var(--verde);border:2px solid var(--verde-mid);border-radius:10px;
+  font-size:.92rem;font-weight:700;cursor:pointer}
+@keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.empty{text-align:center;padding:1.8rem 1rem;color:var(--gtxt);font-size:.86rem}
+</style>
+</head>
+<body>
+
+<!-- ══ PANTALLA PRINCIPAL ══ -->
+<div class="pantalla visible" id="pant-main">
+  <div class="header">
+    <div class="header-top">
+      <span style="font-size:1.35rem">💊</span>
+      <span class="header-app">Registro de Medicamentos</span>
+      <div class="persona-chip" id="persona-chip" onclick="abrirQuien()">
+        <span id="persona-label">—</span><span>▾</span>
+      </div>
+    </div>
+    <h1 id="header-h1">Registro de tomas</h1>
+    <div class="header-sub" id="header-fecha">—</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab activo" onclick="switchTab('tomas')">Tomas</button>
+    <button class="tab"        onclick="switchTab('historial')">Historial</button>
+    <button class="tab"        onclick="switchTab('docs')">Docs</button>
+    <button class="tab"        onclick="switchTab('agregar')">＋ Med</button>
+  </div>
+
+  <!-- ── TAB TOMAS ── -->
+  <div class="scroll-area" id="tab-tomas">
+    <div class="sec">Medicamentos activos</div>
+    <div id="lista-meds"></div>
+  </div>
+
+  <!-- ── TAB HISTORIAL ── -->
+  <div class="scroll-area" id="tab-historial" style="display:none">
+    <div class="hist-filter-row">
+      <button class="hf-btn sel" onclick="filtroRango('todo',this)">Todo</button>
+      <button class="hf-btn"     onclick="filtroRango('mes',this)">Este mes</button>
+      <button class="hf-btn"     onclick="filtroRango('custom',this)">📅 Rango</button>
+      <select class="hf-select"  id="filtro-persona" onchange="renderHistorial()">
+        <option value="">Todos</option>
+        <option>Alex</option><option>Roxana</option><option>Yareni</option>
+      </select>
+    </div>
+    <div id="rango-custom" style="display:none;gap:.4rem;margin-bottom:.6rem;display:none">
+      <input type="date" class="f-input" id="rango-desde" style="font-size:.82rem;padding:.4rem .6rem">
+      <input type="date" class="f-input" id="rango-hasta" style="font-size:.82rem;padding:.4rem .6rem">
+      <button class="hf-btn sel" onclick="renderHistorial()" style="white-space:nowrap">Aplicar</button>
+    </div>
+    <div class="sec" id="hist-sec-label">Registros</div>
+    <div id="lista-hist"><div class="empty">Cargando…</div></div>
+  </div>
+
+  <!-- ── TAB DOCS ── -->
+  <div class="scroll-area" id="tab-docs" style="display:none">
+    <div class="sec">Documentos médicos (Google Drive)</div>
+    <div id="lista-docs"></div>
+    <button class="btn-drive" onclick="abrirNuevoDoc()">📎 Agregar documento de Drive</button>
+  </div>
+
+  <!-- ── TAB AGREGAR ── -->
+  <div class="scroll-area" id="tab-agregar" style="display:none">
+    <div class="sec" id="agregar-sec">Nuevo medicamento</div>
+
+    <label class="f-label">Nombre</label>
+    <input type="text" class="f-input" id="new-nombre" placeholder="ej. Ibuprofeno" maxlength="50">
+
+    <label class="f-label">Vía de administración</label>
+    <div class="chips" id="chips-via">
+      <div class="chip sel" data-v="oral"      onclick="selChip('via',this)">💊 Oral</div>
+      <div class="chip"     data-v="im"         onclick="selChip('via',this)">💉 IM</div>
+      <div class="chip"     data-v="topico"     onclick="selChip('via',this)">🩹 Tópico</div>
+      <div class="chip"     data-v="sublingual" onclick="selChip('via',this)">🫦 Sublingual</div>
+      <div class="chip"     data-v="otro"       onclick="selChip('via',this)">📌 Otro</div>
+    </div>
+
+    <label class="f-label">Dosis disponibles</label>
+    <div class="dosis-list" id="dosis-list"></div>
+    <button class="btn-add-dosis" onclick="addDosisRow()">＋ Agregar dosis</button>
+
+    <label class="f-label">Frecuencia</label>
+    <div class="chips" id="chips-freq">
+      <div class="chip sel" data-v="cada 8h"  onclick="selChip('freq',this)">Cada 8h</div>
+      <div class="chip"     data-v="cada 12h" onclick="selChip('freq',this)">Cada 12h</div>
+      <div class="chip"     data-v="cada 24h" onclick="selChip('freq',this)">Cada 24h</div>
+      <div class="chip"     data-v="sos"       onclick="selChip('freq',this)">SOS</div>
+      <div class="chip"     data-v="otro"      onclick="selChip('freq',this)">Otro</div>
+    </div>
+
+    <label class="f-label">¿Para quién?</label>
+    <div class="chips" id="chips-para">
+      <div class="chip sel" data-v="todos"  onclick="selChip('para',this)">Todos</div>
+      <div class="chip"     data-v="Alex"   onclick="selChip('para',this)">Alex</div>
+      <div class="chip"     data-v="Roxana" onclick="selChip('para',this)">Roxana</div>
+      <div class="chip"     data-v="Yareni" onclick="selChip('para',this)">Yareni</div>
+    </div>
+
+    <label class="f-label">Emoji</label>
+    <div class="chips" id="chips-emoji">
+      <div class="chip sel" data-v="💊" onclick="selChip('emoji',this)">💊</div>
+      <div class="chip"     data-v="💉" onclick="selChip('emoji',this)">💉</div>
+      <div class="chip"     data-v="🩹" onclick="selChip('emoji',this)">🩹</div>
+      <div class="chip"     data-v="🌡️"onclick="selChip('emoji',this)">🌡️</div>
+      <div class="chip"     data-v="🧴" onclick="selChip('emoji',this)">🧴</div>
+      <div class="chip"     data-v="💆" onclick="selChip('emoji',this)">💆</div>
+      <div class="chip"     data-v="🫀" onclick="selChip('emoji',this)">🫀</div>
+    </div>
+
+    <label class="f-label">Notas (indicación, condición)</label>
+    <textarea class="f-ta" id="new-notas" placeholder="ej. Antiinflamatorio. Con alimentos."></textarea>
+
+    <button class="btn-save-med" onclick="guardarMed()">💾 Guardar medicamento</button>
+    <button class="btn-del-med"  id="btn-del-med" onclick="eliminarMed()">🗑 Eliminar medicamento</button>
+  </div>
+</div>
+
+<!-- ══ PANTALLA ÉXITO ══ -->
+<div class="pantalla" id="pant-exito">
+  <div class="ex-icon"  id="ex-icon">✅</div>
+  <div class="ex-hora"  id="ex-hora">—</div>
+  <div class="ex-label" id="ex-label">—</div>
+  <div class="ex-dosis" id="ex-dosis"></div>
+  <button class="btn-volver" onclick="mostrar('pant-main');renderMeds()">← Volver</button>
+</div>
+
+<!-- ══ OVERLAY: QUIEN ══ -->
+<div class="overlay" id="ov-quien">
+  <div class="sheet">
+    <div class="sheet-title">👤 ¿Quién registra?</div>
+    <p style="font-size:.82rem;color:var(--gtxt);margin-bottom:.8rem">
+      Esta preferencia se guarda en este celular. Puedes cambiarla cuando quieras.
+    </p>
+    <button class="btn-confirm" onclick="elegirQuien('Alex')">Alex</button>
+    <button class="btn-confirm" style="background:var(--azul);margin-top:.4rem" onclick="elegirQuien('Roxana')">Roxana</button>
+    <button class="btn-confirm" style="background:#7b1fa2;margin-top:.4rem" onclick="elegirQuien('Yareni')">Yareni</button>
+    <div style="margin:.7rem 0;text-align:center;font-size:.76rem;color:var(--gtxt)">— o escribe —</div>
+    <div style="display:flex;gap:.4rem">
+      <input type="text" class="f-input" id="input-quien" placeholder="Nombre…" maxlength="30"
+             onkeydown="if(event.key==='Enter')elegirQuienCustom()">
+      <button class="btn-confirm" style="width:auto;padding:.65rem 1rem;margin-top:0" onclick="elegirQuienCustom()">OK</button>
+    </div>
+    <button class="btn-cancel" onclick="cerrarOv('ov-quien')">Cancelar</button>
+  </div>
+</div>
+
+<!-- ══ OVERLAY: EDITAR TOMA ══ -->
+<div class="overlay" id="ov-edit">
+  <div class="sheet">
+    <div class="sheet-title">✏️ Editar toma</div>
+    <label class="f-label">Persona</label>
+    <select class="f-select" id="edit-persona">
+      <option>Alex</option><option>Roxana</option><option>Yareni</option>
+    </select>
+    <label class="f-label">Dosis registrada</label>
+    <input type="text" class="f-input" id="edit-dosis" placeholder="ej. 500mg">
+    <label class="f-label">Fecha y hora</label>
+    <input type="datetime-local" class="f-input" id="edit-dt">
+    <label class="f-label">Nota</label>
+    <input type="text" class="f-input" id="edit-nota" placeholder="opcional">
+    <button class="btn-confirm" id="btn-edit-ok" onclick="guardarEdit()">Guardar cambios</button>
+    <button class="btn-cancel"  onclick="cerrarOv('ov-edit')">Cancelar</button>
+  </div>
+</div>
+
+<!-- ══ OVERLAY: NUEVO DOC ══ -->
+<div class="overlay" id="ov-doc">
+  <div class="sheet">
+    <div class="sheet-title" id="doc-titulo">📄 Agregar documento</div>
+    <label class="f-label">Link de Google Drive</label>
+    <input type="url" class="f-input" id="doc-url" placeholder="https://drive.google.com/…">
+    <label class="f-label">Nombre del documento</label>
+    <input type="text" class="f-input" id="doc-nombre" placeholder="ej. Radiografía cervical 26jun2026">
+    <label class="f-label">Tipo</label>
+    <div class="chips" id="chips-doctipo">
+      <div class="chip sel" data-v="radiografia" onclick="selChip('doctipo',this)">🦴 Radiografía</div>
+      <div class="chip"     data-v="receta"       onclick="selChip('doctype',this)">📋 Receta</div>
+      <div class="chip"     data-v="estudio"      onclick="selChip('doctype',this)">🔬 Estudio</div>
+      <div class="chip"     data-v="otro"         onclick="selChip('doctype',this)">📌 Otro</div>
+    </div>
+    <label class="f-label">Notas</label>
+    <textarea class="f-ta" id="doc-notas" placeholder="ej. Columna cervical. Dr. Pérez. 26 jun 2026."></textarea>
+    <button class="btn-confirm" onclick="guardarDoc()">💾 Guardar</button>
+    <button class="btn-cancel"  onclick="cerrarOv('ov-doc')">Cancelar</button>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, updateDoc, doc,
+         query, where, orderBy, limit, getDocs, startAfter }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ─── Firebase ─────────────────────────────────────────────────────── */
+const FB = {
+  apiKey:"AIzaSyCqS4CAY86uU_ORje8SascGJIuT1RsElc0",
+  authDomain:"yarecare-9a86b.firebaseapp.com",
+  projectId:"yarecare-9a86b",
+  storageBucket:"yarecare-9a86b.firebasestorage.app",
+  messagingSenderId:"997226969746",
+  appId:"1:997226969746:web:e494c2576d74129444044b"
+};
+const app = initializeApp(FB);
+const db  = getFirestore(app);
+
+/* ─── Catálogo default ──────────────────────────────────────────────── */
+const MEDS_DEFAULT = [
+  { id:"ketorolaco",   nombre:"Ketorolaco",   via:"im",   para:"Alex",
+    dosis:[{mg:30,label:"30mg",tipo:"mg"},{mg:60,label:"60mg",tipo:"mg"}],
+    frecuencia:"cada 8h", emoji:"💉",
+    notas:"Golpe cervical por alcance. Intramuscular.", activo:true },
+  { id:"dexametasona", nombre:"Dexametasona", via:"im",   para:"Alex",
+    dosis:[{label:"1 ampula",tipo:"unidad",mg:null},{label:"2 ampulas",tipo:"unidad",mg:null}],
+    frecuencia:"sos", emoji:"💉",
+    notas:"Golpe cervical. Intramuscular.", activo:true },
+  { id:"paracetamol",  nombre:"Paracetamol",  via:"oral", para:"todos",
+    dosis:[{mg:500,label:"500mg — 1 tableta"},{mg:1000,label:"1,000mg — 2 tabletas"}],
+    unidad:"mg", tabletaMg:500, frecuencia:"cada 8h", emoji:"💊",
+    notas:"", activo:true },
+  { id:"celecoxib",    nombre:"Celecoxib",    via:"oral", para:"Alex",
+    dosis:[{mg:100,label:"100mg"},{mg:200,label:"200mg"}],
+    unidad:"mg", tabletaMg:200, frecuencia:"cada 12h", emoji:"💊",
+    notas:"Antiinflamatorio. Con alimentos.", activo:true },
+];
+
+/* ─── localStorage ──────────────────────────────────────────────────── */
+const LS_MEDS    = "meds_v2";
+const LS_PERSONA = "meds_persona";
+const LS_DOCS    = "meds_docs_v1";
+
+function loadMeds(){
+  try{ const r=localStorage.getItem(LS_MEDS); if(r) return JSON.parse(r); }catch{}
+  const d=JSON.parse(JSON.stringify(MEDS_DEFAULT));
+  localStorage.setItem(LS_MEDS,JSON.stringify(d)); return d;
+}
+function saveMeds(a){ localStorage.setItem(LS_MEDS,JSON.stringify(a)); }
+function loadDocs(){ try{ return JSON.parse(localStorage.getItem(LS_DOCS))||[]; }catch{ return []; } }
+function saveDocs(a){ localStorage.setItem(LS_DOCS,JSON.stringify(a)); }
+function getPersona(){ return localStorage.getItem(LS_PERSONA)||"Alex"; }
+function savePersona(n){ localStorage.setItem(LS_PERSONA,n); }
+
+/* ─── URL persona override ──────────────────────────────────────────── */
+function resolverPersona(){
+  const p = new URLSearchParams(location.search).get("persona");
+  if(p){ savePersona(p); return p; }
+  return getPersona();
+}
+
+/* ─── Fecha/hora local ──────────────────────────────────────────────── */
+const pad = n => String(n).padStart(2,"0");
+const now = () => new Date();
+const fechaLocal = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const horaLocal  = d => `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+const dtLocal    = d => `${fechaLocal(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const horaCorta  = d => { let h=d.getHours(),m=d.getMinutes(),ap=h>=12?"pm":"am"; h=h%12||12; return `${h}:${pad(m)} ${ap}`; };
+const MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const MESES_C=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const fechaLegible = d => `${d.getDate()} de ${MESES[d.getMonth()]} ${d.getFullYear()}`;
+const fechaCorta   = s => { const[y,m,d]=s.split("-").map(Number); return `${d} ${MESES_C[m-1]}`; };
+
+/* ─── Formateo mg ───────────────────────────────────────────────────── */
+function fmtMg(n){ return n>=1000 ? (n/1000).toFixed(n%1000===0?0:1)+"g" : n+"mg"; }
+
+/* ─── Pantallas ─────────────────────────────────────────────────────── */
+window.mostrar = id => {
+  document.querySelectorAll(".pantalla").forEach(p=>{ p.classList.remove("visible"); p.style.display="none"; });
+  const el=document.getElementById(id);
+  if(el){ el.style.display="flex"; el.classList.add("visible"); }
+};
+
+/* ─── Toast ─────────────────────────────────────────────────────────── */
+let _tTimer;
+window.toast = msg => {
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("visible");
+  clearTimeout(_tTimer); _tTimer=setTimeout(()=>t.classList.remove("visible"),2800);
+};
+
+/* ─── Overlays ──────────────────────────────────────────────────────── */
+window.cerrarOv = id => document.getElementById(id).classList.remove("visible");
+["ov-quien","ov-edit","ov-doc"].forEach(id=>{
+  document.getElementById(id).addEventListener("click",e=>{
+    if(e.target.id===id) cerrarOv(id);
+  });
+});
+
+/* ─── Chips ─────────────────────────────────────────────────────────── */
+const chipState = { via:"oral", freq:"cada 8h", para:"todos", emoji:"💊", doctype:"radiografia" };
+window.selChip = (grupo,el) => {
+  el.parentElement.querySelectorAll(".chip").forEach(c=>c.classList.remove("sel"));
+  el.classList.add("sel");
+  chipState[grupo] = el.dataset.v;
+};
+
+/* ─── Tabs ──────────────────────────────────────────────────────────── */
+const TAB_IDS = ["tomas","historial","docs","agregar"];
+window.switchTab = tab => {
+  TAB_IDS.forEach(t=>{
+    document.getElementById("tab-"+t).style.display = t===tab?"block":"none";
+  });
+  document.querySelectorAll(".tab").forEach((el,i)=>{
+    el.classList.toggle("activo", TAB_IDS[i]===tab);
+  });
+  if(tab==="historial") renderHistorial();
+  if(tab==="docs")      renderDocs();
+  if(tab==="agregar")   resetFormMed();
+};
+
+/* ─── Quién ─────────────────────────────────────────────────────────── */
+window.abrirQuien = () => document.getElementById("ov-quien").classList.add("visible");
+window.elegirQuien = n => {
+  savePersona(n); actualizarPersonaUI();
+  cerrarOv("ov-quien"); renderMeds();
+};
+window.elegirQuienCustom = () => {
+  const n=document.getElementById("input-quien").value.trim();
+  if(n) elegirQuien(n);
+};
+function actualizarPersonaUI(){
+  const p=getPersona();
+  document.getElementById("persona-label").textContent=p;
+  document.getElementById("header-h1").textContent="Tomas — "+p;
+}
+
+/* ─── Render Meds ───────────────────────────────────────────────────── */
+async function renderMeds(){
+  const lista   = document.getElementById("lista-meds");
+  const persona = getPersona();
+  const meds    = loadMeds().filter(m=>m.activo&&(m.para==="todos"||m.para===persona));
+  lista.innerHTML="";
+  if(!meds.length){
+    lista.innerHTML=`<div class="empty">No hay medicamentos para ${persona}.<br>Agrégalos en ＋ Med.</div>`;
+    return;
+  }
+  for(const m of meds) lista.appendChild(await buildCard(m, persona));
+}
+window.renderMeds = renderMeds;
+
+async function buildCard(m, persona){
+  const card = document.createElement("div");
+  card.className="med-card"; card.id="card-"+m.id;
+
+  // últimas 2 tomas
+  let miniHist="";
+  try{
+    const q=query(collection(db,"meds_log"),
+      where("medId","==",m.id),where("persona","==",persona),
+      orderBy("creadoEn","desc"),limit(2));
+    const snap=await getDocs(q);
+    if(snap.docs.length){
+      miniHist=`<div class="mini-hist">`+snap.docs.map(d=>{
+        const r=d.data();
+        return `<div class="mhi">
+          <span class="mhi-quien">${r.persona}</span>
+          <span class="mhi-dosis">${r.dosisLabel||r.dosis}</span>
+          <span class="mhi-hora">${r.fecha?fechaCorta(r.fecha):""} ${r.hora}</span>
+        </div>`;
+      }).join("")+`</div>`;
+    }
+  }catch{}
+
+  const viaCls = m.via==="im"?"b-im":m.via==="topico"?"b-top":"b-oral";
+  const viaLabel= m.via==="im"?"💉 IM":m.via==="topico"?"🩹 Tópico":"💊 Oral";
+
+  card.innerHTML=`
+    <div class="med-head" onclick="toggleCard('${m.id}')">
+      <div class="med-icon">${m.emoji}</div>
+      <div style="flex:1">
+        <div class="med-nombre">${m.nombre}</div>
+        <div class="med-sub">${m.frecuencia}${m.notas?" · "+m.notas.slice(0,35):""}</div>
+      </div>
+      <span class="med-badge ${viaCls}">${viaLabel}</span>
+    </div>
+    <div class="med-expand" id="exp-${m.id}">
+      ${miniHist}
+      <div class="ex-label">Calculadora de dosis</div>
+      ${buildCalc(m)}
+      <div class="ex-label">Hora de administración</div>
+      <input type="datetime-local" class="hora-input" id="hora-${m.id}" value="${dtLocal(now())}">
+      <div class="ex-label">Nota (opcional)</div>
+      <textarea class="nota-ta" id="nota-${m.id}" rows="2" placeholder="ej. Con alimentos, en ayunas…"></textarea>
+      <button class="btn-reg" id="btn-${m.id}" onclick="registrar('${m.id}')">
+        ${m.emoji} Registrar toma
+      </button>
+      <div style="text-align:right;margin-top:.4rem">
+        <button onclick="editarMed('${m.id}')"
+          style="background:none;border:none;color:var(--gtxt);font-size:.75rem;cursor:pointer;text-decoration:underline">
+          ✏️ Editar medicamento
+        </button>
+      </div>
+    </div>
+  `;
+  return card;
+}
+
+function buildCalc(m){
+  const id=m.id;
+  // Determinar si tiene tabletas
+  const hasTabs = !!m.tabletaMg;
+
+  const modeBtns=`
+    <div class="calc-mode-row">
+      <div class="calc-mode-btn sel" id="mode-mg-${id}"  onclick="setMode('${id}','mg')">
+        Ingresar mg → tabletas
+      </div>
+      <div class="calc-mode-btn"    id="mode-tab-${id}" onclick="setMode('${id}','tab')">
+        Ingresar tabletas → mg
+      </div>
+    </div>`;
+
+  // Opciones de dosis predefinidas del catálogo
+  const dosisOpts = m.dosis.map((d,i)=>`<option value="${d.mg??""}" data-label="${d.label}">${d.label}</option>`).join("");
+
+  return `<div class="calc-box" id="calc-${id}">
+    ${hasTabs?modeBtns:""}
+    <div id="calc-mg-${id}">
+      <div class="calc-row">
+        <input type="number" id="val-mg-${id}" min="0" inputmode="decimal"
+               placeholder="${m.dosis[0]?.mg||""}"
+               oninput="calcDesde('${id}','mg')">
+        <select id="sel-dosis-${id}" onchange="aplicarDosis('${id}')">
+          <option value="">— elegir dosis —</option>
+          ${dosisOpts}
+        </select>
+      </div>
+      <div class="calc-result" id="res-mg-${id}"></div>
+    </div>
+    <div id="calc-tab-${id}" style="display:none">
+      <div class="calc-row">
+        <input type="number" id="val-tab-${id}" min="0" step=".5" inputmode="decimal"
+               placeholder="ej. 2"
+               oninput="calcDesde('${id}','tab')">
+        <span style="font-size:.85rem;color:var(--gtxt)">tabletas de ${hasTabs?m.tabletaMg+"mg":"?"}</span>
+      </div>
+      <div class="calc-result" id="res-tab-${id}"></div>
+    </div>
+  </div>`;
+}
+
+/* ─── Calculadora ───────────────────────────────────────────────────── */
+window.setMode = (id, mode) => {
+  const meds = loadMeds();
+  const m    = meds.find(x=>x.id===id);
+  document.getElementById(`mode-mg-${id}`).classList.toggle("sel",  mode==="mg");
+  document.getElementById(`mode-tab-${id}`).classList.toggle("sel", mode==="tab");
+  document.getElementById(`calc-mg-${id}`).style.display  = mode==="mg"?"block":"none";
+  document.getElementById(`calc-tab-${id}`).style.display = mode==="tab"?"block":"none";
+};
+
+window.aplicarDosis = id => {
+  const sel = document.getElementById(`sel-dosis-${id}`);
+  const mg  = parseFloat(sel.value);
+  if(!isNaN(mg)){
+    document.getElementById(`val-mg-${id}`).value = mg;
+    calcDesde(id,"mg");
+  }
+};
+
+window.calcDesde = (id, desde) => {
+  const meds = loadMeds();
+  const m    = meds.find(x=>x.id===id);
+  if(!m) return;
+
+  if(desde==="mg"){
+    const mg  = parseFloat(document.getElementById(`val-mg-${id}`).value);
+    const res = document.getElementById(`res-mg-${id}`);
+    if(isNaN(mg)||mg<=0){ res.textContent=""; return; }
+    let txt = `= ${fmtMg(mg)}`;
+    if(m.tabletaMg) txt += ` (${+(mg/m.tabletaMg).toFixed(2)} tabletas de ${m.tabletaMg}mg)`;
+    res.textContent = txt;
+  } else {
+    const tabs = parseFloat(document.getElementById(`val-tab-${id}`).value);
+    const res  = document.getElementById(`res-tab-${id}`);
+    if(!m.tabletaMg||isNaN(tabs)||tabs<=0){ res.textContent=""; return; }
+    const mg   = tabs * m.tabletaMg;
+    res.textContent = `= ${fmtMg(mg)} totales`;
+  }
+};
+
+/* ─── Toggle card ───────────────────────────────────────────────────── */
+window.toggleCard = id => {
+  const exp = document.getElementById("exp-"+id);
+  const open = exp.classList.contains("open");
+  document.querySelectorAll(".med-expand").forEach(e=>e.classList.remove("open"));
+  if(!open) exp.classList.add("open");
+};
+
+/* ─── Registrar toma ────────────────────────────────────────────────── */
+window.registrar = async id => {
+  const persona = getPersona();
+  const meds    = loadMeds();
+  const m       = meds.find(x=>x.id===id);
+  if(!m) return;
+
+  // Determinar dosis — detectar si es modo unidad puro
+  let dosisLabel="", dosisMg=null;
+  const solounidad = m.dosis.length>0 && m.dosis.every(d=>d.tipo==="unidad"||(d.tipo!=="mg"&&d.mg==null));
+
+  if(solounidad){
+    // Selector simple: dosis × cantidad
+    const selUnd = document.getElementById(`sel-dosis-${id}`);
+    const selCant= document.getElementById(`sel-cant-${id}`);
+    const base   = selUnd?.value || (m.dosis[0]?.label||"");
+    const cant   = parseInt(selCant?.value||"1");
+    if(!base){ toast("⚠️ Elige una dosis"); return; }
+    dosisLabel = cant>1 ? `${cant} × ${base}` : base;
+    dosisMg    = null;
+  } else {
+    const modeBtnMg = document.getElementById(`mode-mg-${id}`);
+    const enModoTab = modeBtnMg && !modeBtnMg.classList.contains("sel");
+
+    if(enModoTab){
+      const tabs=parseFloat(document.getElementById(`val-tab-${id}`).value);
+      if(!isNaN(tabs)&&tabs>0&&m.tabletaMg){
+        dosisMg=tabs*m.tabletaMg;
+        dosisLabel=`${fmtMg(dosisMg)} (${tabs} tab × ${m.tabletaMg}mg)`;
+      }
+    } else {
+      const mgEl =document.getElementById(`val-mg-${id}`);
+      const selEl=document.getElementById(`sel-dosis-${id}`);
+      const mgVal=parseFloat(mgEl?.value);
+      if(!isNaN(mgVal)&&mgVal>0){
+        dosisMg=mgVal;
+        if(m.tabletaMg&&mgVal%m.tabletaMg===0){
+          const tabs=mgVal/m.tabletaMg;
+          dosisLabel=`${fmtMg(mgVal)} (${tabs} tab × ${m.tabletaMg}mg)`;
+        } else { dosisLabel=fmtMg(mgVal); }
+      } else if(selEl&&selEl.value){
+        const opt=selEl.options[selEl.selectedIndex];
+        // ¿es opción tipo unidad?
+        if(opt.dataset.und){
+          dosisLabel=opt.dataset.und; dosisMg=null;
+        } else {
+          dosisLabel=opt.text;
+          const mgP=parseFloat(selEl.value);
+          if(!isNaN(mgP)) dosisMg=mgP;
+        }
+      } else {
+        const primera=m.dosis[0];
+        dosisLabel=primera.label; dosisMg=primera.mg??null;
+      }
+    }
+  }
+
+  if(!dosisLabel){ toast("⚠️ Elige o ingresa una dosis primero"); return; }
+
+  const dtEl = document.getElementById("hora-"+id);
+  const dt   = dtEl.value ? new Date(dtEl.value) : now();
+  const nota = document.getElementById("nota-"+id).value.trim();
+
+  const btn=document.getElementById("btn-"+id);
+  btn.disabled=true; btn.textContent="⏳ Guardando…";
+
+  const payload={
+    medId:id, nombre:m.nombre, persona,
+    dosis: dosisLabel,      // legible completo
+    dosisMg: dosisMg??null, // numérico para análisis futuro
+    dosisLabel,
+    fecha:    fechaLocal(dt),
+    hora:     horaLocal(dt),
+    nota:     nota||null,
+    via:      m.via,
+    creadoEn: dt.getTime(),
+    editado:  false,
+  };
+
+  try{
+    await addDoc(collection(db,"meds_log"),payload);
+    btn.disabled=false; btn.textContent=`${m.emoji} Registrar toma`;
+    // Pantalla éxito
+    document.getElementById("ex-icon").textContent  = m.emoji;
+    document.getElementById("ex-hora").textContent  = horaCorta(dt);
+    document.getElementById("ex-label").textContent = `${m.nombre} — ${persona}`;
+    document.getElementById("ex-dosis").textContent = dosisLabel;
+    mostrar("pant-exito");
+  }catch(e){
+    btn.disabled=false; btn.textContent=`${m.emoji} Registrar toma`;
+    toast("⚠️ "+e.message);
+  }
+};
+
+/* ─── Historial ─────────────────────────────────────────────────────── */
+let histRango="todo";
+window.filtroRango = (r, el) => {
+  histRango=r;
+  document.querySelectorAll(".hf-btn").forEach(b=>b.classList.remove("sel"));
+  el.classList.add("sel");
+  const custom=document.getElementById("rango-custom");
+  custom.style.display = r==="custom"?"flex":"none";
+  if(r!=="custom") renderHistorial();
+};
+
+window.renderHistorial = async () => {
+  const lista   = document.getElementById("lista-hist");
+  const persona = document.getElementById("filtro-persona").value;
+  const secLabel= document.getElementById("hist-sec-label");
+  lista.innerHTML='<div class="empty">Cargando…</div>';
+
+  // Construir query base
+  const constraints=[collection(db,"meds_log")];
+  const filters=[orderBy("creadoEn","desc")];
+
+  if(histRango==="mes"){
+    const inicio=new Date(); inicio.setDate(1); inicio.setHours(0,0,0,0);
+    filters.unshift(where("creadoEn",">=",inicio.getTime()));
+    secLabel.textContent="Este mes";
+  } else if(histRango==="custom"){
+    const desde=document.getElementById("rango-desde").value;
+    const hasta=document.getElementById("rango-hasta").value;
+    if(desde) filters.unshift(where("fecha",">=",desde));
+    if(hasta) filters.push(where("fecha","<=",hasta));
+    secLabel.textContent=`${desde||"inicio"} → ${hasta||"hoy"}`;
+  } else {
+    secLabel.textContent="Todo el registro";
+  }
+
+  if(persona) filters.unshift(where("persona","==",persona));
+  filters.push(limit(80));
+
+  try{
+    const q    = query(collection(db,"meds_log"),...filters);
+    const snap = await getDocs(q);
+    const docs = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!docs.length){ lista.innerHTML='<div class="empty">Sin registros para este filtro.</div>'; return; }
+    lista.innerHTML=docs.map(d=>`
+      <div class="log-item" onclick="abrirEdit('${d.id}','${d.persona}',
+        ${JSON.stringify(d.dosisLabel||d.dosis)},${d.creadoEn},'${d.nota||""}')">
+        <div class="li-icon">${d.via==="im"?"💉":"💊"}</div>
+        <div style="flex:1">
+          <div class="li-nombre">${d.nombre}</div>
+          <div class="li-dosis">${d.dosisLabel||d.dosis}</div>
+          <div class="li-meta">${d.fecha} · ${d.hora}${d.nota?" · "+d.nota:""}</div>
+        </div>
+        <div class="li-right">
+          <span class="li-badge">${d.persona}</span>
+          ${d.editado?'<span class="li-editado">editado</span>':""}
+        </div>
+      </div>`).join("");
+  }catch(e){
+    lista.innerHTML=`<div class="empty" style="color:var(--rojo)">Error: ${e.message}</div>`;
+  }
+};
+
+/* ─── Editar toma ───────────────────────────────────────────────────── */
+let _editId=null;
+window.abrirEdit = (id,persona,dosis,creadoEn,nota) => {
+  _editId=id;
+  document.getElementById("edit-persona").value = persona;
+  document.getElementById("edit-dosis").value   = dosis;
+  document.getElementById("edit-dt").value      = dtLocal(new Date(Number(creadoEn)));
+  document.getElementById("edit-nota").value    = nota||"";
+  document.getElementById("ov-edit").classList.add("visible");
+};
+window.guardarEdit = async () => {
+  if(!_editId) return;
+  const persona = document.getElementById("edit-persona").value;
+  const dosis   = document.getElementById("edit-dosis").value.trim();
+  const dtStr   = document.getElementById("edit-dt").value;
+  const nota    = document.getElementById("edit-nota").value.trim();
+  const dt      = new Date(dtStr);
+  const btn     = document.getElementById("btn-edit-ok");
+  btn.disabled=true; btn.textContent="Guardando…";
+  try{
+    await updateDoc(doc(db,"meds_log",_editId),{
+      persona, dosis, dosisLabel:dosis, nota:nota||null,
+      fecha:fechaLocal(dt), hora:horaLocal(dt),
+      creadoEn:dt.getTime(), editado:true,
+    });
+    cerrarOv("ov-edit"); toast("✅ Toma actualizada"); renderHistorial();
+  }catch(e){ toast("⚠️ "+e.message); }
+  btn.disabled=false; btn.textContent="Guardar cambios";
+};
+
+/* ─── Docs ──────────────────────────────────────────────────────────── */
+function renderDocs(){
+  const lista = document.getElementById("lista-docs");
+  const docs  = loadDocs();
+  if(!docs.length){ lista.innerHTML='<div class="empty">Sin documentos aún.<br>Agrega el link de Drive.</div>'; return; }
+  lista.innerHTML=docs.map((d,i)=>`
+    <div class="doc-item" onclick="editarDoc(${i})">
+      <div class="doc-icon">
+        ${d.tipo==="radiografia"?"🦴":d.tipo==="receta"?"📋":d.tipo==="estudio"?"🔬":"📄"}
+      </div>
+      <div>
+        <div class="doc-nombre">${d.nombre||"Documento "+(i+1)}</div>
+        <div class="doc-meta">${d.fecha||"—"} · ${d.notas?d.notas.slice(0,50):"Sin notas"}</div>
+      </div>
+      <a href="${d.url}" target="_blank" onclick="event.stopPropagation()"
+         style="margin-left:auto;font-size:1.3rem;text-decoration:none">🔗</a>
+    </div>`).join("");
+}
+
+let _docIdx=null;
+window.abrirNuevoDoc = () => {
+  _docIdx=null;
+  document.getElementById("doc-titulo").textContent="📄 Agregar documento";
+  document.getElementById("doc-url").value="";
+  document.getElementById("doc-nombre").value="";
+  document.getElementById("doc-notas").value="";
+  document.getElementById("ov-doc").classList.add("visible");
+};
+window.editarDoc = idx => {
+  _docIdx=idx;
+  const d=loadDocs()[idx];
+  document.getElementById("doc-titulo").textContent="✏️ Editar documento";
+  document.getElementById("doc-url").value=d.url||"";
+  document.getElementById("doc-nombre").value=d.nombre||"";
+  document.getElementById("doc-notas").value=d.notas||"";
+  document.getElementById("ov-doc").classList.add("visible");
+};
+window.guardarDoc = () => {
+  const url   =document.getElementById("doc-url").value.trim();
+  const nombre=document.getElementById("doc-nombre").value.trim();
+  const notas =document.getElementById("doc-notas").value.trim();
+  if(!url){ toast("⚠️ Pega el link de Drive"); return; }
+  const docs=loadDocs();
+  const entry={ url, nombre:nombre||"Documento", notas, tipo:chipState.doctype||"otro", fecha:fechaLocal(now()) };
+  if(_docIdx!=null) docs[_docIdx]=entry; else docs.unshift(entry);
+  saveDocs(docs); cerrarOv("ov-doc"); renderDocs();
+  toast("✅ Documento guardado");
+};
+
+/* ─── Agregar / Editar med ──────────────────────────────────────────── */
+let _editMedId=null;
+let _dosisRows=[]; // [{label, tipo}]  tipo: "mg" | "unidad"
+
+window.addDosisRow = (label="", tipo="mg") => {
+  _dosisRows.push({label, tipo});
+  renderDosisRows();
+};
+
+function renderDosisRows(){
+  const cont=document.getElementById("dosis-list");
+  cont.innerHTML="";
+  _dosisRows.forEach((d,i)=>{
+    const row=document.createElement("div");
+    row.className="dosis-row";
+    const ph = d.tipo==="mg" ? "ej. 500mg" : "ej. 1 ampula, 5ml";
+    row.innerHTML=`
+      <div class="dosis-row-top">
+        <input type="text" placeholder="${ph}" value="${d.label}"
+               oninput="_dosisRows[${i}].label=this.value">
+        <button class="btn-del-dosis" onclick="delDosisRow(${i})">×</button>
+      </div>
+      <div class="dosis-tipo-row">
+        <div class="dosis-tipo-btn${d.tipo==='mg'?' sel':''}"
+             onclick="selDosisType(${i},'mg',this)">⚗️ mg</div>
+        <div class="dosis-tipo-btn${d.tipo==='unidad'?' sel':''}"
+             onclick="selDosisType(${i},'unidad',this)">📦 Unidad</div>
+      </div>`;
+    cont.appendChild(row);
+  });
+}
+
+window.selDosisType = (i, tipo, el) => {
+  _dosisRows[i].tipo = tipo;
+  const row = el.closest(".dosis-row");
+  row.querySelectorAll(".dosis-tipo-btn").forEach(b=>b.classList.remove("sel"));
+  el.classList.add("sel");
+  const inp = row.querySelector("input");
+  inp.placeholder = tipo==="mg" ? "ej. 500mg" : "ej. 1 ampula, 5ml";
+};
+
+window.delDosisRow = i => { _dosisRows.splice(i,1); renderDosisRows(); };
+
+function resetFormMed(){
+  _editMedId=null; _dosisRows=[{label:"",tipo:"mg"}];
+  document.getElementById("agregar-sec").textContent="Nuevo medicamento";
+  document.getElementById("new-nombre").value="";
+  document.getElementById("new-notas").value="";
+  document.getElementById("btn-del-med").style.display="none";
+  // reset chips
+  ["via","freq","para","emoji"].forEach(g=>{
+    const defaults={via:"oral",freq:"cada 8h",para:"todos",emoji:"💊"};
+    document.querySelectorAll(`#chips-${g} .chip`).forEach(c=>{
+      c.classList.toggle("sel",c.dataset.v===defaults[g]);
+    });
+    chipState[g]=defaults[g];
+  });
+  renderDosisRows();
+}
+
+window.editarMed = id => {
+  const m=loadMeds().find(x=>x.id===id);
+  if(!m) return;
+  switchTab("agregar");
+  _editMedId=id;
+  document.getElementById("agregar-sec").textContent="Editar medicamento";
+  document.getElementById("new-nombre").value=m.nombre;
+  document.getElementById("new-notas").value=m.notas||"";
+  document.getElementById("btn-del-med").style.display="block";
+  _dosisRows=m.dosis.map(d=>({label:d.label||(d.mg!=null?d.mg+"mg":""), tipo:d.tipo||"mg"}));
+  renderDosisRows();
+  ["via","freq","para","emoji"].forEach(g=>{
+    const val=g==="freq"?m.frecuencia:m[g];
+    document.querySelectorAll(`#chips-${g} .chip`).forEach(c=>{
+      c.classList.toggle("sel",c.dataset.v===val);
+    });
+    chipState[g]=val||chipState[g];
+  });
+};
+
+window.guardarMed = () => {
+  const nombre=document.getElementById("new-nombre").value.trim();
+  if(!nombre){ document.getElementById("new-nombre").focus(); toast("⚠️ Falta el nombre"); return; }
+  // Parsear dosis usando tipo declarado
+  const dosis=_dosisRows.filter(d=>d.label.trim()).map(d=>{
+    if(d.tipo==="mg"){
+      const match=d.label.match(/(\d+(?:\.\d+)?)\s*mg/i);
+      return { label:d.label.trim(), tipo:"mg", mg: match?parseFloat(match[1]):null };
+    } else {
+      return { label:d.label.trim(), tipo:"unidad", mg:null };
+    }
+  });
+  if(!dosis.length){ toast("⚠️ Agrega al menos una dosis"); return; }
+  // tabletaMg solo si hay dosis tipo mg con valor numérico
+  const mgValidas=dosis.filter(d=>d.tipo==="mg"&&d.mg).map(d=>d.mg);
+  const tabletaMg=mgValidas.length>=1?Math.min(...mgValidas):null;
+
+  const notas=document.getElementById("new-notas").value.trim();
+  const meds =loadMeds();
+
+  if(_editMedId){
+    const idx=meds.findIndex(x=>x.id===_editMedId);
+    if(idx>=0) meds[idx]={ ...meds[idx],
+      nombre, via:chipState.via, dosis, frecuencia:chipState.freq,
+      para:chipState.para, emoji:chipState.emoji, notas, tabletaMg };
+  } else {
+    const id=nombre.toLowerCase().replace(/[^a-z0-9]/g,"_").replace(/_+/g,"_").slice(0,28)
+           +"_"+Date.now().toString(36);
+    meds.push({ id, nombre, via:chipState.via, dosis, tabletaMg,
+      frecuencia:chipState.freq, para:chipState.para,
+      emoji:chipState.emoji, notas, activo:true, creadoEn:Date.now() });
+  }
+  saveMeds(meds); toast("✅ "+nombre+" guardado"); switchTab("tomas"); renderMeds();
+};
+
+window.eliminarMed = () => {
+  if(!_editMedId) return;
+  if(!confirm("¿Eliminar este medicamento del catálogo? Los registros en Firestore no se borran.")) return;
+  const meds=loadMeds().map(m=>m.id===_editMedId?{...m,activo:false}:m);
+  saveMeds(meds); toast("🗑 Medicamento eliminado"); switchTab("tomas"); renderMeds();
+};
+
+/* ─── Init ──────────────────────────────────────────────────────────── */
+(function init(){
+  resolverPersona();
+  actualizarPersonaUI();
+  const d=now();
+  document.getElementById("header-fecha").textContent=fechaLegible(d);
+  addDosisRow(); // fila inicial en form
+  renderMeds();
+})();
+</script>
+</body>
+</html>
