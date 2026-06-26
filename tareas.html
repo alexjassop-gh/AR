@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>YareCare · Actividades</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --verde:      #2d6a4f;
+  --verde-claro:#d4edda;
+  --verde-mid:  #52b788;
+  --azul:       #1a6fa8;
+  --azul-claro: #d0e8f5;
+  --rojo:       #e63946;
+  --rojo-claro: #fde8e8;
+  --naranja:    #e07b00;
+  --fondo:      #f0f4f0;
+  --card:       #ffffff;
+  --texto:      #1a1a2e;
+  --suave:      #6b7280;
+  --borde:      #e5e7eb;
+}
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+  min-height: 100%;
+}
+
+/* ── Pantallas ── */
+.pantalla { display: none; flex-direction: column; max-width: 420px; margin: 0 auto; min-height: 100vh; }
+.pantalla.visible { display: flex; }
+
+/* ── Header ── */
+.header {
+  padding: 0.7rem 1rem 0.5rem;
+  background: var(--verde);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-shrink: 0;
+}
+.header .logo { font-size: 1.5rem; }
+.header .header-text { flex: 1; }
+.header h1 { font-size: 0.75rem; font-weight: 600; opacity: 0.85; letter-spacing: 0.3px; }
+.header .bloque-label { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.3px; line-height: 1.1; }
+.header .fecha { font-size: 0.72rem; opacity: 0.75; margin-top: 0.1rem; }
+
+/* ── Timer badge (inicio/fin en progreso) ── */
+.timer-badge {
+  font-size: 1.3rem; font-weight: 900; font-variant-numeric: tabular-nums;
+  letter-spacing: -1px; background: rgba(255,255,255,0.15);
+  border-radius: 8px; padding: 0.3rem 0.5rem; text-align: center; flex-shrink: 0;
+  display: none;
+}
+.timer-badge .timer-hint { font-size: 0.6rem; opacity: 0.7; font-weight: 400; display: block; text-align: center; }
+
+/* ── Persona badge ── */
+.persona-badge {
+  font-size: 0.72rem; background: rgba(255,255,255,0.2);
+  border-radius: 20px; padding: 0.25rem 0.6rem;
+  display: flex; align-items: center; gap: 0.3rem; cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── Scroll area ── */
+.scroll-area { padding: 0.8rem 0.9rem 6rem; flex: 1; }
+
+/* ── Estado banner (en progreso) ── */
+.banner-progreso {
+  display: none;
+  background: #fff8e1; border: 1.5px solid #ffe082;
+  border-radius: 12px; padding: 0.75rem 1rem;
+  margin-bottom: 0.8rem; font-size: 0.88rem; color: #6d4c00;
+  align-items: center; gap: 0.5rem;
+}
+.banner-progreso.visible { display: flex; }
+.banner-progreso strong { flex: 1; }
+
+/* ── Sección label ── */
+.seccion-label {
+  font-size: 0.7rem; font-weight: 700; color: var(--suave);
+  text-transform: uppercase; letter-spacing: 0.6px;
+  margin: 1rem 0 0.4rem 0.2rem;
+}
+
+/* ── Activity row ── */
+.act-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.85rem 0.9rem; border-radius: 12px;
+  margin-bottom: 0.45rem; cursor: pointer;
+  transition: background 0.12s; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  border: 2px solid transparent; background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.act-row:active { opacity: 0.8; }
+.act-row .act-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.act-nombre { font-size: 0.95rem; font-weight: 600; line-height: 1.2; }
+.act-meta { font-size: 0.74rem; color: var(--suave); margin-top: 0.1rem; }
+.act-badge {
+  font-size: 0.62rem; padding: 0.15rem 0.5rem;
+  border-radius: 20px; font-weight: 700; white-space: nowrap; margin-left: auto;
+}
+.badge-puntual   { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+.badge-inicio    { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+.badge-progreso  { background: #fff8e1; color: #e65100; border: 1px solid #ffe082; animation: pulso 1.5s infinite; }
+
+@keyframes pulso { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+@keyframes pop   { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ── Botón agregar (flotante) ── */
+.btn-agregar {
+  position: fixed; bottom: 78px; right: 16px;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--verde-mid); color: white; border: none;
+  font-size: 1.5rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 30; -webkit-tap-highlight-color: transparent;
+}
+.btn-agregar:active { transform: scale(0.93); }
+
+/* ── Botón fijo abajo ── */
+.footer-btn {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 0.85rem 1rem; background: var(--fondo);
+  border-top: 1px solid var(--borde); max-width: 420px; margin: 0 auto; z-index: 20;
+}
+.btn-confirmar {
+  width: 100%; padding: 0.95rem; background: var(--verde);
+  color: white; border: none; border-radius: 12px;
+  font-size: 1.05rem; font-weight: 800; cursor: pointer;
+  box-shadow: 0 3px 10px rgba(45,106,79,0.3);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-confirmar:active { opacity: 0.85; }
+.btn-confirmar.btn-azul  { background: var(--azul); box-shadow: 0 3px 10px rgba(26,111,168,0.3); }
+.btn-confirmar.btn-rojo  { background: var(--rojo); box-shadow: 0 3px 10px rgba(230,57,70,0.3); }
+.btn-confirmar:disabled  { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Pantalla éxito ── */
+#pantalla-exito {
+  align-items: center; justify-content: center;
+  text-align: center; padding: 2rem 1.5rem; background: var(--fondo);
+}
+.exito-icon { font-size: 5rem; margin-bottom: 0.8rem; animation: pop 0.4s cubic-bezier(0.175,0.885,0.32,1.275); }
+.exito-hora { font-size: 3rem; font-weight: 900; color: var(--verde); letter-spacing: -2px; line-height: 1; }
+.exito-bloque { font-size: 1rem; color: var(--suave); margin: 0.3rem 0 0.5rem; }
+.exito-dur   { font-size: 1.4rem; font-weight: 800; color: var(--verde-mid); margin-bottom: 1.2rem; }
+.btn-cerrar {
+  padding: 0.7rem 2rem; background: var(--fondo);
+  color: var(--verde); border: 2px solid var(--verde-mid);
+  border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+}
+
+/* ── Pantalla error ── */
+#pantalla-error {
+  align-items: center; justify-content: center;
+  text-align: center; padding: 2rem 1.5rem; background: var(--fondo);
+}
+.error-icon { font-size: 4rem; margin-bottom: 1rem; }
+.error-msg    { color: var(--rojo); font-weight: 600; margin-bottom: 0.4rem; font-size: 1.05rem; }
+.error-detail { font-size: 0.82rem; color: var(--suave); margin-bottom: 1.2rem; }
+.btn-reintentar {
+  padding: 0.7rem 2rem; background: var(--rojo);
+  color: white; border: none; border-radius: 10px;
+  font-size: 0.95rem; font-weight: 700; cursor: pointer;
+}
+
+/* ── Pantalla inválida ── */
+#pantalla-invalida {
+  align-items: center; justify-content: center;
+  text-align: center; padding: 2rem 1.5rem; background: var(--fondo);
+}
+
+/* ── Overlays / sheets ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 100;
+  align-items: flex-end; justify-content: center;
+}
+.overlay.visible { display: flex; }
+.sheet {
+  background: white; border-radius: 20px 20px 0 0;
+  padding: 1.4rem 1.2rem 2.2rem; width: 100%; max-width: 420px;
+  max-height: 90vh; overflow-y: auto;
+}
+.sheet-title {
+  font-size: 1rem; font-weight: 800; color: var(--verde);
+  margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.sheet label {
+  font-size: 0.78rem; font-weight: 700; color: var(--suave);
+  display: block; margin-bottom: 0.35rem; margin-top: 0.9rem;
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.sheet label:first-of-type { margin-top: 0; }
+.sheet input[type="text"],
+.sheet input[type="number"],
+.sheet select {
+  width: 100%; padding: 0.7rem 0.85rem; border: 2px solid var(--borde);
+  border-radius: 10px; font-size: 0.95rem; outline: none;
+  font-family: inherit; color: var(--texto);
+}
+.sheet input:focus, .sheet select:focus { border-color: var(--verde-mid); }
+.tipo-btns { display: flex; gap: 0.5rem; margin-top: 0.1rem; }
+.tipo-btn {
+  flex: 1; padding: 0.65rem 0.5rem; border: 2px solid var(--borde);
+  border-radius: 10px; background: white; font-size: 0.82rem;
+  font-weight: 600; cursor: pointer; text-align: center; color: var(--suave);
+}
+.tipo-btn.sel { border-color: var(--verde-mid); background: var(--verde-claro); color: var(--verde); }
+.emoji-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; margin-top: 0.2rem;
+}
+.emoji-opt {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; border-radius: 10px; border: 2px solid transparent;
+  cursor: pointer; background: var(--fondo);
+}
+.emoji-opt.sel { border-color: var(--verde-mid); background: var(--verde-claro); }
+.sheet-actions { display: flex; gap: 0.6rem; margin-top: 1.2rem; }
+.btn-cancelar {
+  flex: 1; padding: 0.8rem; border: 2px solid var(--borde); border-radius: 10px;
+  background: none; font-size: 0.9rem; cursor: pointer; color: var(--suave); font-weight: 600;
+}
+.btn-guardar {
+  flex: 2; padding: 0.8rem; background: var(--verde); color: white;
+  border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 800; cursor: pointer;
+}
+.btn-eliminar {
+  width: 100%; padding: 0.75rem; background: var(--rojo-claro);
+  color: var(--rojo); border: 2px solid #f5c6c6;
+  border-radius: 10px; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; margin-top: 0.5rem;
+}
+
+/* ── Sheet quien ── */
+.quien-btn {
+  display: block; width: 100%; padding: 0.85rem 1rem;
+  border: 2px solid var(--borde); border-radius: 12px; background: white;
+  font-size: 1rem; font-weight: 600; text-align: left; cursor: pointer; margin-bottom: 0.5rem;
+}
+.quien-btn:active { border-color: var(--verde-mid); background: var(--verde-claro); }
+.divider-o { text-align: center; color: var(--suave); font-size: 0.8rem; margin: 0.6rem 0; }
+.input-row { display: flex; gap: 0.5rem; }
+.input-row input { flex: 1; }
+.btn-ok {
+  padding: 0.7rem 1rem; background: var(--verde); color: white;
+  border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+}
+
+/* ── Historial panel ── */
+.hist-item {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0; border-bottom: 1px solid var(--borde); font-size: 0.85rem;
+}
+.hist-item:last-child { border-bottom: none; }
+.hist-quien { font-weight: 700; color: var(--verde); min-width: 64px; }
+.hist-fecha { flex: 1; color: var(--suave); font-size: 0.78rem; }
+.hist-dur   { font-weight: 600; color: var(--texto); }
+.hist-empty { color: var(--suave); font-size: 0.85rem; padding: 0.8rem 0; text-align: center; }
+
+/* ── Long press hint ── */
+.longpress-hint {
+  font-size: 0.7rem; color: var(--suave); text-align: center;
+  margin-top: 0.3rem; margin-bottom: -0.3rem; opacity: 0.7;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ PANTALLA PRINCIPAL ══ -->
+<div class="pantalla" id="pantalla-principal">
+  <div class="header">
+    <div class="logo">🏠</div>
+    <div class="header-text">
+      <h1>YareCare · Actividades</h1>
+      <div class="bloque-label" id="act-label">—</div>
+      <div class="fecha" id="act-fecha">—</div>
+    </div>
+    <div class="timer-badge" id="timer-badge">
+      <span id="timer-display">00:00</span>
+      <span class="timer-hint">en curso</span>
+    </div>
+    <div class="persona-badge" id="persona-badge" onclick="abrirQuien(false)">
+      <span id="persona-nombre">—</span><span>▾</span>
+    </div>
+  </div>
+
+  <div class="scroll-area">
+
+    <div class="banner-progreso" id="banner-progreso">
+      <span>⏱</span>
+      <strong id="banner-texto">Sesión en curso</strong>
+      <span id="banner-tiempo" style="font-weight:700;color:var(--naranja)"></span>
+    </div>
+
+    <div class="seccion-label" id="sec-principal"></div>
+    <div id="lista-actos"></div>
+
+    <div class="longpress-hint">Mantén presionado para editar una actividad</div>
+
+    <div class="seccion-label" id="sec-historial" style="display:none">Recientes</div>
+    <div id="lista-historial"></div>
+
+  </div>
+
+  <button class="btn-agregar" onclick="abrirNueva()" title="Nueva actividad">＋</button>
+
+  <div class="footer-btn">
+    <button class="btn-confirmar" id="btn-accion" onclick="accionPrincipal()">
+      ✅ Registrar
+    </button>
+  </div>
+</div>
+
+<!-- ══ PANTALLA ÉXITO ══ -->
+<div class="pantalla" id="pantalla-exito">
+  <div class="exito-icon" id="exito-icon">✅</div>
+  <div class="exito-hora"  id="exito-hora">—</div>
+  <div class="exito-bloque" id="exito-bloque">—</div>
+  <div class="exito-dur"  id="exito-dur"></div>
+  <button class="btn-cerrar" onclick="volverPrincipal()">← Volver</button>
+</div>
+
+<!-- ══ PANTALLA ERROR ══ -->
+<div class="pantalla" id="pantalla-error">
+  <div class="error-icon">⚠️</div>
+  <div class="error-msg"    id="error-msg">No se pudo guardar</div>
+  <div class="error-detail" id="error-detail">Revisa tu conexión e intenta de nuevo.</div>
+  <button class="btn-reintentar" onclick="reintentar()">Reintentar</button>
+</div>
+
+<!-- ══ PANTALLA INVÁLIDA ══ -->
+<div class="pantalla" id="pantalla-invalida">
+  <div style="font-size:3rem;margin-bottom:1rem;margin-top:3rem;text-align:center">🏷️</div>
+  <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;text-align:center">Tag no reconocida</div>
+  <div style="color:var(--suave);font-size:0.85rem;text-align:center;padding:0 2rem">
+    URL inválida. Usa <code>?tarea=lavar_trastes</code> o abre la página sin parámetros para ver todas.
+  </div>
+  <div style="margin-top:2rem;text-align:center">
+    <button class="btn-cerrar" onclick="mostrar('pantalla-principal');init()">Ver todas las actividades</button>
+  </div>
+</div>
+
+
+<!-- ══ OVERLAY: SHEET QUIEN ══ -->
+<div class="overlay" id="overlay-quien">
+  <div class="sheet">
+    <div class="sheet-title">👤 ¿Quién eres?</div>
+    <button class="quien-btn" onclick="elegirQuien('Alex')">👤 Alex</button>
+    <button class="quien-btn" onclick="elegirQuien('Roxana')">👤 Roxana</button>
+    <button class="quien-btn" onclick="elegirQuien('Yareni')">👤 Yareni</button>
+    <div class="divider-o">— o escribe tu nombre —</div>
+    <div class="input-row">
+      <input type="text" id="input-quien-otro" placeholder="Nombre…" maxlength="30"
+             onkeydown="if(event.key==='Enter')elegirQuienOtro()">
+      <button class="btn-ok" onclick="elegirQuienOtro()">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ OVERLAY: SHEET NUEVA / EDITAR ACTIVIDAD ══ -->
+<div class="overlay" id="overlay-nueva">
+  <div class="sheet">
+    <div class="sheet-title" id="nueva-titulo">✏️ Nueva actividad</div>
+
+    <label>Nombre</label>
+    <input type="text" id="nueva-nombre" placeholder="ej. Llamada con cliente" maxlength="40">
+
+    <label>Tipo</label>
+    <div class="tipo-btns">
+      <div class="tipo-btn sel" id="tipo-puntual" onclick="selTipo('puntual')">
+        ⚡ Puntual<br><small style="font-weight:400;font-size:0.7rem">un tap</small>
+      </div>
+      <div class="tipo-btn" id="tipo-inicio_fin" onclick="selTipo('inicio_fin')">
+        ⏱ Inicio/Fin<br><small style="font-weight:400;font-size:0.7rem">dos taps</small>
+      </div>
+    </div>
+
+    <div id="dur-field">
+      <label>Duración estimada (min)</label>
+      <input type="number" id="nueva-dur" min="1" max="480" placeholder="ej. 5" inputmode="numeric">
+    </div>
+
+    <label>Emoji / Ícono</label>
+    <div class="emoji-grid" id="emoji-grid"></div>
+
+    <label>Categoría</label>
+    <select id="nueva-cat">
+      <option value="casa">🏠 Casa</option>
+      <option value="personal">👤 Personal</option>
+      <option value="trabajo">💼 Trabajo</option>
+      <option value="salud">💊 Salud</option>
+      <option value="otro">📌 Otro</option>
+    </select>
+
+    <div class="sheet-actions">
+      <button class="btn-cancelar" onclick="cerrarNueva()">Cancelar</button>
+      <button class="btn-guardar"  onclick="guardarActividad()">Guardar</button>
+    </div>
+    <button class="btn-eliminar" id="btn-eliminar-act" onclick="eliminarActividad()" style="display:none">
+      🗑 Eliminar actividad
+    </button>
+  </div>
+</div>
+
+<!-- ══ OVERLAY: HISTORIAL ══ -->
+<div class="overlay" id="overlay-hist">
+  <div class="sheet">
+    <div class="sheet-title" id="hist-titulo">📋 Historial</div>
+    <div id="hist-lista"><div class="hist-empty">Cargando…</div></div>
+    <div class="sheet-actions" style="margin-top:1rem">
+      <button class="btn-cancelar" onclick="cerrarHist()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, query, where, orderBy, limit, getDocs }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ─── Firebase ─────────────────────────────────────────────────────────── */
+const firebaseConfig = {
+  apiKey:            "AIzaSyCqS4CAY86uU_ORje8SascGJIuT1RsElc0",
+  authDomain:        "yarecare-9a86b.firebaseapp.com",
+  projectId:         "yarecare-9a86b",
+  storageBucket:     "yarecare-9a86b.firebasestorage.app",
+  messagingSenderId: "997226969746",
+  appId:             "1:997226969746:web:e494c2576d74129444044b"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+/* ─── Catálogo base (se fusiona con localStorage) ──────────────────────── */
+const TAREAS_DEFAULT = [
+  { id:"lavar_trastes",       label:"Lavar trastes",       tipo:"inicio_fin", durMin:null, emoji:"🍽️", cat:"casa"     },
+  { id:"barrer_cochera",      label:"Barrer cochera",      tipo:"puntual",    durMin:5,    emoji:"🧹", cat:"casa"     },
+  { id:"regar_plantas",       label:"Regar plantas",       tipo:"puntual",    durMin:3,    emoji:"🌱", cat:"casa"     },
+  { id:"desechos_mascotas",   label:"Desechos mascotas",   tipo:"puntual",    durMin:3,    emoji:"🐾", cat:"casa"     },
+  { id:"utensilios_mascotas", label:"Utensilios mascotas", tipo:"puntual",    durMin:5,    emoji:"🐾", cat:"casa"     },
+  { id:"barrer",              label:"Barrer",              tipo:"puntual",    durMin:10,   emoji:"🧹", cat:"casa"     },
+  { id:"recoger_basura",      label:"Recoger basura",      tipo:"puntual",    durMin:3,    emoji:"🗑️", cat:"casa"     },
+  { id:"limpieza_estufa",     label:"Limpieza estufa",     tipo:"inicio_fin", durMin:null, emoji:"🔥", cat:"casa"     },
+  { id:"limpieza_refri",      label:"Limpieza refri",      tipo:"inicio_fin", durMin:null, emoji:"❄️", cat:"casa"     },
+  { id:"limpieza_micro",      label:"Limpieza microondas", tipo:"puntual",    durMin:5,    emoji:"📡", cat:"casa"     },
+  { id:"lavar_ropa",          label:"Lavar ropa",          tipo:"puntual",    durMin:3,    emoji:"👕", cat:"casa"     },
+  { id:"tender_ropa",         label:"Tender ropa",         tipo:"inicio_fin", durMin:null, emoji:"👕", cat:"casa"     },
+  { id:"lavar_bano",          label:"Lavar baño",          tipo:"inicio_fin", durMin:null, emoji:"🚿", cat:"casa"     },
+];
+
+/* ─── localStorage keys ────────────────────────────────────────────────── */
+const LS_TAREAS   = "act_tareas_v1";
+const LS_PERSONA  = "act_persona";
+const LS_INICIO   = "act_inicio_pendiente";
+
+/* ─── Tareas CRUD ──────────────────────────────────────────────────────── */
+function loadTareas() {
+  try {
+    const raw = localStorage.getItem(LS_TAREAS);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return JSON.parse(JSON.stringify(TAREAS_DEFAULT));
+}
+function saveTareas(arr) { localStorage.setItem(LS_TAREAS, JSON.stringify(arr)); }
+function getTareaById(id) { return loadTareas().find(t => t.id === id); }
+
+/* ─── Inicio/Fin pendiente ─────────────────────────────────────────────── */
+function getInicio() {
+  try { const r = localStorage.getItem(LS_INICIO); return r ? JSON.parse(r) : null; } catch { return null; }
+}
+function setInicio(tareaId, ts) { localStorage.setItem(LS_INICIO, JSON.stringify({ tareaId, ts })); }
+function clearInicio()           { localStorage.removeItem(LS_INICIO); }
+
+/* ─── Persona ──────────────────────────────────────────────────────────── */
+function getPersona() { return localStorage.getItem(LS_PERSONA) || null; }
+function savePersona(n) { localStorage.setItem(LS_PERSONA, n); }
+
+/* ─── Helpers de fecha/hora LOCAL (sin bug UTC) ────────────────────────── */
+function pad(n) { return String(n).padStart(2, "0"); }
+function fechaLocal(d)  { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function horaLocal(d)   { return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+function horaCorta(d) {
+  let h = d.getHours(), m = d.getMinutes(), ap = h >= 12 ? "pm" : "am";
+  h = h % 12 || 12;
+  return `${h}:${pad(m)} ${ap}`;
+}
+function meses() { return ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"]; }
+function fechaLegible(d) { return `${d.getDate()} de ${meses()[d.getMonth()]}`; }
+
+/* ─── Estado global ────────────────────────────────────────────────────── */
+let tareaActiva   = null;   // tarea seleccionada desde URL o null (modo lista)
+let ultimoPayload = null;
+let timerInterval = null;
+let editandoId    = null;   // id de tarea que se está editando
+let tipoSelecto   = "puntual";
+let emojiSelecto  = "⚡";
+
+const EMOJIS = ["⚡","🏠","🧹","🍽️","🌱","🚿","🗑️","👕","❄️","🔥","📡","🐾",
+                 "💼","📞","💻","📝","🚗","🏃","🛒","💊","🏋️","🎮","📚","🎯",
+                 "💰","📊","🔧","🧰","🍳","☕","🌙","⏰"];
+
+/* ─── Pantallas ────────────────────────────────────────────────────────── */
+window.mostrar = function(id) {
+  document.querySelectorAll(".pantalla").forEach(p => {
+    p.classList.remove("visible"); p.style.display = "none";
+  });
+  const el = document.getElementById(id);
+  if (el) { el.style.display = "flex"; el.classList.add("visible"); }
+};
+
+/* ─── Init ─────────────────────────────────────────────────────────────── */
+window.init = function() {
+  const params  = new URLSearchParams(location.search);
+  const tareaId = params.get("tarea") || "";
+
+  if (tareaId) {
+    const t = getTareaById(tareaId);
+    if (!t) { mostrar("pantalla-invalida"); return; }
+    tareaActiva = t;
+    document.getElementById("act-label").textContent = t.label;
+    renderBtnAccion();
+  } else {
+    tareaActiva = null;
+    document.getElementById("act-label").textContent = "Todas las actividades";
+    renderListado();
+  }
+
+  const ahora = new Date();
+  document.getElementById("act-fecha").textContent = fechaLegible(ahora);
+
+  const persona = getPersona();
+  document.getElementById("persona-nombre").textContent = persona || "¿Quién?";
+
+  iniciarTimerDisplay();
+  mostrar("pantalla-principal");
+  renderBannerProgreso();
+
+  if (!persona) setTimeout(() => abrirQuien(true), 400);
+};
+
+/* ─── Render listado (modo sin parámetro) ──────────────────────────────── */
+function renderListado() {
+  const tareas  = loadTareas();
+  const inicio  = getInicio();
+  const lista   = document.getElementById("lista-actos");
+  const secLabel = document.getElementById("sec-principal");
+  secLabel.textContent = "Actividades";
+
+  lista.innerHTML = "";
+
+  // Agrupar por categoría
+  const cats = { casa:"🏠 Casa", personal:"👤 Personal", trabajo:"💼 Trabajo", salud:"💊 Salud", otro:"📌 Otro" };
+  const grupos = {};
+  tareas.forEach(t => {
+    const c = t.cat || "otro";
+    if (!grupos[c]) grupos[c] = [];
+    grupos[c].push(t);
+  });
+
+  Object.entries(cats).forEach(([catKey, catLabel]) => {
+    const items = grupos[catKey];
+    if (!items || !items.length) return;
+
+    const catHead = document.createElement("div");
+    catHead.className = "seccion-label";
+    catHead.style.marginTop = "0.6rem";
+    catHead.textContent = catLabel;
+    lista.appendChild(catHead);
+
+    items.forEach(t => lista.appendChild(buildActRow(t, inicio)));
+  });
+
+  document.getElementById("btn-accion").style.display = "none";
+  document.querySelector(".footer-btn").style.display  = "none";
+}
+
+function buildActRow(t, inicio) {
+  const enProgreso = inicio && inicio.tareaId === t.id;
+  const row = document.createElement("div");
+  row.className = "act-row";
+  if (enProgreso) row.style.borderColor = "var(--naranja)";
+
+  let badgeHtml = "";
+  if (enProgreso) {
+    badgeHtml = `<span class="act-badge badge-progreso">⏱ en curso</span>`;
+  } else if (t.tipo === "puntual") {
+    badgeHtml = `<span class="act-badge badge-puntual">⚡ ${t.durMin ?? "—"}min</span>`;
+  } else {
+    badgeHtml = `<span class="act-badge badge-inicio">⏱ inicio/fin</span>`;
+  }
+
+  const iconBg = t.cat === "personal" ? "#e3f2fd"
+               : t.cat === "trabajo"  ? "#f3e5f5"
+               : t.cat === "salud"    ? "#fff8e1"
+               : "var(--verde-claro)";
+
+  row.innerHTML = `
+    <div class="act-icon" style="background:${iconBg}">${t.emoji || "⚡"}</div>
+    <div style="flex:1">
+      <div class="act-nombre">${t.label}</div>
+      <div class="act-meta">${t.tipo === "puntual" ? "Tarea puntual" : "Con inicio y fin"}</div>
+    </div>
+    ${badgeHtml}
+  `;
+  row.addEventListener("click", () => irATarea(t.id));
+  row.addEventListener("longpress", () => abrirEditar(t.id));
+  addLongPress(row, () => abrirEditar(t.id));
+  return row;
+}
+
+function irATarea(id) {
+  history.pushState({}, "", `?tarea=${id}`);
+  window.init();
+}
+
+/* ─── Render modo tarea individual ────────────────────────────────────────*/
+function renderBtnAccion() {
+  const btn   = document.getElementById("btn-accion");
+  const footer = document.querySelector(".footer-btn");
+  footer.style.display = "block";
+  btn.style.display    = "block";
+  if (!tareaActiva) return;
+
+  const t      = tareaActiva;
+  const inicio = getInicio();
+
+  if (t.tipo === "puntual") {
+    btn.textContent = `${t.emoji || "✅"} Registrar — ${t.label}`;
+    btn.className   = "btn-confirmar btn-verde";
+    document.getElementById("sec-principal").textContent = t.tipo === "puntual"
+      ? `Tarea puntual · ~${t.durMin ?? "?"}min` : "";
+  } else {
+    const enProgreso = inicio && inicio.tareaId === t.id;
+    if (!enProgreso) {
+      btn.textContent = `▶ Iniciar — ${t.label}`;
+      btn.className   = "btn-confirmar btn-azul";
+    } else {
+      btn.textContent = `⏹ Finalizar — ${t.label}`;
+      btn.className   = "btn-confirmar btn-rojo";
+    }
+    document.getElementById("sec-principal").textContent = "";
+  }
+  renderBannerProgreso();
+  renderHistInline();
+}
+
+/* ─── Banner en progreso ──────────────────────────────────────────────────*/
+function renderBannerProgreso() {
+  const inicio  = getInicio();
+  const banner  = document.getElementById("banner-progreso");
+  const timerBadge = document.getElementById("timer-badge");
+  if (!inicio) {
+    banner.classList.remove("visible");
+    timerBadge.style.display = "none";
+    return;
+  }
+  const t = getTareaById(inicio.tareaId);
+  document.getElementById("banner-texto").textContent = t ? `${t.emoji || "⏱"} ${t.label} — en curso` : "Sesión en curso";
+  banner.classList.add("visible");
+  timerBadge.style.display = "block";
+}
+
+/* ─── Historial inline ────────────────────────────────────────────────────*/
+async function renderHistInline() {
+  if (!tareaActiva) return;
+  const secHist = document.getElementById("sec-historial");
+  const listaH  = document.getElementById("lista-historial");
+  secHist.style.display = "block";
+  listaH.innerHTML = '<div class="hist-empty">Cargando…</div>';
+  try {
+    const docs = await fetchHistorial(tareaActiva.id, 4);
+    if (!docs.length) { listaH.innerHTML = '<div class="hist-empty">Sin registros aún</div>'; return; }
+    listaH.innerHTML = docs.map(d => `
+      <div class="hist-item">
+        <span class="hist-quien">${d.persona}</span>
+        <span class="hist-fecha">${d.fecha} ${d.horaInicio}</span>
+        <span class="hist-dur">${d.duracionMin != null ? d.duracionMin + "min" : "—"}</span>
+      </div>`).join("");
+  } catch {
+    listaH.innerHTML = '<div class="hist-empty" style="color:var(--rojo)">No se pudo cargar</div>';
+  }
+}
+
+async function fetchHistorial(tareaId, n) {
+  const q = query(
+    collection(db, "tareas_log"),
+    where("tarea", "==", tareaId),
+    orderBy("creadoEn", "desc"),
+    limit(n)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => d.data());
+}
+
+/* ─── Timer display ────────────────────────────────────────────────────────*/
+function iniciarTimerDisplay() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(actualizarTimer, 5000);
+  actualizarTimer();
+}
+function actualizarTimer() {
+  const inicio = getInicio();
+  if (!inicio) { document.getElementById("timer-display").textContent = "—"; return; }
+  const min = Math.floor((Date.now() - inicio.ts) / 60000);
+  const h   = Math.floor(min / 60), m = min % 60;
+  document.getElementById("timer-display").textContent = h > 0 ? `${h}h${pad(m)}` : `${m}min`;
+  document.getElementById("banner-tiempo").textContent = h > 0 ? `${h}h ${m}min` : `${min}min`;
+}
+
+/* ─── Acción principal ─────────────────────────────────────────────────────*/
+window.accionPrincipal = async function() {
+  const persona = getPersona();
+  if (!persona) { abrirQuien(true); return; }
+  if (!tareaActiva) return;
+
+  const t     = tareaActiva;
+  const ahora = new Date();
+  const btn   = document.getElementById("btn-accion");
+  btn.disabled = true; btn.textContent = "⏳ Guardando…";
+
+  if (t.tipo === "puntual") {
+    ultimoPayload = {
+      tarea: t.id, persona,
+      fecha:       fechaLocal(ahora),
+      horaInicio:  horaLocal(ahora),
+      horaFin:     null,
+      duracionMin: t.durMin ?? null,
+      tipo:        "puntual",
+      cat:         t.cat || "otro",
+      creadoEn:    ahora.getTime(),
+    };
+    await guardarEnFirestore(ultimoPayload, t, ahora, null);
+
+  } else {
+    const inicio = getInicio();
+    if (!inicio || inicio.tareaId !== t.id) {
+      // Iniciar
+      setInicio(t.id, ahora.getTime());
+      btn.disabled = false;
+      renderBtnAccion();
+      mostrarExitoInicio(t, ahora);
+      return;
+    } else {
+      // Finalizar
+      const durMin = Math.round((ahora.getTime() - inicio.ts) / 60000);
+      const inicioDate = new Date(inicio.ts);
+      ultimoPayload = {
+        tarea: t.id, persona,
+        fecha:       fechaLocal(inicioDate),
+        horaInicio:  horaLocal(inicioDate),
+        horaFin:     horaLocal(ahora),
+        duracionMin: durMin,
+        tipo:        "inicio_fin",
+        cat:         t.cat || "otro",
+        creadoEn:    inicioDate.getTime(),
+      };
+      clearInicio();
+      await guardarEnFirestore(ultimoPayload, t, ahora, durMin);
+    }
+  }
+};
+
+async function guardarEnFirestore(payload, t, ahora, durMin) {
+  const btn = document.getElementById("btn-accion");
+  try {
+    await addDoc(collection(db, "tareas_log"), payload);
+    btn.disabled = false;
+    mostrarExitoFin(t, ahora, durMin);
+  } catch(e) {
+    document.getElementById("error-msg").textContent    = "No se pudo guardar";
+    document.getElementById("error-detail").textContent = e.message || "Revisa tu conexión.";
+    btn.disabled = false; renderBtnAccion();
+    mostrar("pantalla-error");
+  }
+}
+
+/* ─── Pantallas éxito ──────────────────────────────────────────────────── */
+function mostrarExitoInicio(t, ahora) {
+  document.getElementById("exito-icon").textContent   = "▶";
+  document.getElementById("exito-hora").textContent   = horaCorta(ahora);
+  document.getElementById("exito-bloque").textContent = `${t.emoji || ""} ${t.label} — iniciado`;
+  document.getElementById("exito-dur").textContent    = "Vuelve a abrir el tag para finalizar";
+  mostrar("pantalla-exito");
+}
+function mostrarExitoFin(t, ahora, durMin) {
+  document.getElementById("exito-icon").textContent   = t.emoji || "✅";
+  document.getElementById("exito-hora").textContent   = horaCorta(ahora);
+  document.getElementById("exito-bloque").textContent = `${t.label} — completado`;
+  document.getElementById("exito-dur").textContent    = durMin != null ? `⏱ ${durMin} minutos` : "";
+  mostrar("pantalla-exito");
+}
+
+window.volverPrincipal = function() { mostrar("pantalla-principal"); renderBtnAccion(); renderBannerProgreso(); };
+window.reintentar      = async function() {
+  if (!ultimoPayload) { volverPrincipal(); return; }
+  mostrar("pantalla-principal");
+  await accionPrincipal();
+};
+
+/* ─── Quien ────────────────────────────────────────────────────────────── */
+let quienCallback = null;
+window.abrirQuien = function(requerido) {
+  quienCallback = requerido;
+  document.getElementById("overlay-quien").classList.add("visible");
+};
+window.elegirQuien = function(n) {
+  savePersona(n);
+  document.getElementById("persona-nombre").textContent = n;
+  document.getElementById("overlay-quien").classList.remove("visible");
+  if (quienCallback === true) accionPrincipal();
+};
+window.elegirQuienOtro = function() {
+  const n = document.getElementById("input-quien-otro").value.trim();
+  if (!n) return;
+  elegirQuien(n);
+};
+
+/* ─── Nueva / Editar actividad ─────────────────────────────────────────── */
+function buildEmojiGrid(sel) {
+  const grid = document.getElementById("emoji-grid");
+  grid.innerHTML = "";
+  EMOJIS.forEach(e => {
+    const d = document.createElement("div");
+    d.className = "emoji-opt" + (e === sel ? " sel" : "");
+    d.textContent = e;
+    d.onclick = () => {
+      document.querySelectorAll(".emoji-opt").forEach(x => x.classList.remove("sel"));
+      d.classList.add("sel");
+      emojiSelecto = e;
+    };
+    grid.appendChild(d);
+  });
+  emojiSelecto = sel;
+}
+
+window.selTipo = function(tipo) {
+  tipoSelecto = tipo;
+  document.getElementById("tipo-puntual").classList.toggle("sel",    tipo === "puntual");
+  document.getElementById("tipo-inicio_fin").classList.toggle("sel", tipo === "inicio_fin");
+  document.getElementById("dur-field").style.display = tipo === "puntual" ? "block" : "none";
+};
+
+window.abrirNueva = function() {
+  editandoId = null;
+  document.getElementById("nueva-titulo").textContent = "✏️ Nueva actividad";
+  document.getElementById("nueva-nombre").value = "";
+  document.getElementById("nueva-dur").value    = "";
+  document.getElementById("nueva-cat").value    = "casa";
+  document.getElementById("btn-eliminar-act").style.display = "none";
+  selTipo("puntual");
+  buildEmojiGrid("⚡");
+  document.getElementById("overlay-nueva").classList.add("visible");
+};
+
+window.abrirEditar = function(id) {
+  const t = getTareaById(id);
+  if (!t) return;
+  editandoId = id;
+  document.getElementById("nueva-titulo").textContent = "✏️ Editar actividad";
+  document.getElementById("nueva-nombre").value = t.label;
+  document.getElementById("nueva-dur").value    = t.durMin ?? "";
+  document.getElementById("nueva-cat").value    = t.cat || "casa";
+  document.getElementById("btn-eliminar-act").style.display = "block";
+  selTipo(t.tipo);
+  buildEmojiGrid(t.emoji || "⚡");
+  document.getElementById("overlay-nueva").classList.add("visible");
+};
+
+window.cerrarNueva = function() {
+  document.getElementById("overlay-nueva").classList.remove("visible");
+};
+
+window.guardarActividad = function() {
+  const nombre = document.getElementById("nueva-nombre").value.trim();
+  if (!nombre) { document.getElementById("nueva-nombre").focus(); return; }
+
+  const durVal = parseInt(document.getElementById("nueva-dur").value, 10);
+  const dur    = (tipoSelecto === "puntual" && !isNaN(durVal) && durVal > 0) ? durVal : null;
+  const cat    = document.getElementById("nueva-cat").value;
+
+  const tareas = loadTareas();
+
+  if (editandoId) {
+    const idx = tareas.findIndex(t => t.id === editandoId);
+    if (idx >= 0) {
+      tareas[idx] = { ...tareas[idx], label: nombre, tipo: tipoSelecto, durMin: dur, emoji: emojiSelecto, cat };
+    }
+  } else {
+    const id = nombre.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g,"_").slice(0,30)
+             + "_" + Date.now().toString(36);
+    tareas.push({ id, label: nombre, tipo: tipoSelecto, durMin: dur, emoji: emojiSelecto, cat });
+  }
+
+  saveTareas(tareas);
+  cerrarNueva();
+  renderListado();
+};
+
+window.eliminarActividad = function() {
+  if (!editandoId) return;
+  if (!confirm("¿Eliminar esta actividad? Los registros anteriores en Firestore no se borran.")) return;
+  const tareas = loadTareas().filter(t => t.id !== editandoId);
+  saveTareas(tareas);
+  cerrarNueva();
+  renderListado();
+};
+
+/* ─── Historial overlay ────────────────────────────────────────────────── */
+window.cerrarHist = function() {
+  document.getElementById("overlay-hist").classList.remove("visible");
+};
+
+/* ─── Long press helper ────────────────────────────────────────────────── */
+function addLongPress(el, cb) {
+  let timer;
+  el.addEventListener("touchstart",  () => { timer = setTimeout(cb, 600); }, { passive: true });
+  el.addEventListener("touchend",    () => clearTimeout(timer));
+  el.addEventListener("touchmove",   () => clearTimeout(timer), { passive: true });
+  el.addEventListener("mousedown",   () => { timer = setTimeout(cb, 600); });
+  el.addEventListener("mouseup",     () => clearTimeout(timer));
+  el.addEventListener("mouseleave",  () => clearTimeout(timer));
+}
+
+/* ─── Cerrar overlays tocando fuera ────────────────────────────────────── */
+["overlay-quien","overlay-nueva","overlay-hist"].forEach(id => {
+  document.getElementById(id).addEventListener("click", e => {
+    if (e.target.id === id) document.getElementById(id).classList.remove("visible");
+  });
+});
+
+/* ─── Botón volver del navegador ───────────────────────────────────────── */
+window.addEventListener("popstate", () => window.init());
+
+/* ─── Arranque ─────────────────────────────────────────────────────────── */
+window.init();
+</script>
+</body>
+</html>
