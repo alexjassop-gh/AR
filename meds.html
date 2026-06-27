@@ -605,24 +605,44 @@ async function buildCard(m, persona){
 
 function buildCalc(m){
   const id=m.id;
-  // Determinar si tiene tabletas
   const hasTabs = !!m.tabletaMg;
 
-  const modeBtns=`
-    <div class="calc-mode-row">
-      <div class="calc-mode-btn sel" id="mode-mg-${id}"  onclick="setMode('${id}','mg')">
-        Ingresar mg → tabletas
-      </div>
-      <div class="calc-mode-btn"    id="mode-tab-${id}" onclick="setMode('${id}','tab')">
-        Ingresar tabletas → mg
+  // ¿Todas las dosis son tipo unidad?
+  const solounidad = m.dosis.length>0 &&
+    m.dosis.every(d=>d.tipo==="unidad"||(d.tipo!=="mg"&&d.mg==null));
+
+  if(solounidad){
+    const optsUnd=m.dosis.map(d=>`<option value="${d.label}">${d.label}</option>`).join("");
+    return `<div class="calc-box" id="calc-${id}">
+      <div class="calc-row">
+        <select id="sel-dosis-${id}" style="flex:1">
+          <option value="">— elegir —</option>
+          ${optsUnd}
+        </select>
+        <select id="sel-cant-${id}" style="width:90px">
+          <option value="1">× 1</option>
+          <option value="2">× 2</option>
+          <option value="3">× 3</option>
+        </select>
       </div>
     </div>`;
+  }
 
-  // Opciones de dosis predefinidas del catálogo
-  const dosisOpts = m.dosis.map((d,i)=>`<option value="${d.mg??""}" data-label="${d.label}">${d.label}</option>`).join("");
+  // Modo mg normal
+  const modeBtns=hasTabs?`
+    <div class="calc-mode-row">
+      <div class="calc-mode-btn sel" id="mode-mg-${id}" onclick="setMode('${id}','mg')">
+        mg → tabletas
+      </div>
+      <div class="calc-mode-btn" id="mode-tab-${id}" onclick="setMode('${id}','tab')">
+        tabletas → mg
+      </div>
+    </div>`:"";
+
+  const dosisOpts=m.dosis.map(d=>`<option value="${d.mg??""}">${d.label}</option>`).join("");
 
   return `<div class="calc-box" id="calc-${id}">
-    ${hasTabs?modeBtns:""}
+    ${modeBtns}
     <div id="calc-mg-${id}">
       <div class="calc-row">
         <input type="number" id="val-mg-${id}" min="0" inputmode="decimal"
@@ -638,8 +658,7 @@ function buildCalc(m){
     <div id="calc-tab-${id}" style="display:none">
       <div class="calc-row">
         <input type="number" id="val-tab-${id}" min="0" step=".5" inputmode="decimal"
-               placeholder="ej. 2"
-               oninput="calcDesde('${id}','tab')">
+               placeholder="ej. 2" oninput="calcDesde('${id}','tab')">
         <span style="font-size:.85rem;color:var(--gtxt)">tabletas de ${hasTabs?m.tabletaMg+"mg":"?"}</span>
       </div>
       <div class="calc-result" id="res-tab-${id}"></div>
@@ -1054,6 +1073,12 @@ window.eliminarMed = () => {
 
 /* ─── Init ──────────────────────────────────────────────────────────── */
 (function init(){
+  // ?reset=1 limpia catálogo y recarga sin el parámetro
+  if(new URLSearchParams(location.search).get("reset")==="1"){
+    localStorage.removeItem("meds_v2");
+    location.replace(location.pathname);
+    return;
+  }
   resolverPersona();
   actualizarPersonaUI();
   const d=now();
