@@ -33,7 +33,7 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
 
 /* ── Tabs ── */
 .tabs{display:flex;background:var(--verde);padding:0 .5rem;
-  position:sticky;top:0;z-index:9;}
+  position:sticky;top:56px;z-index:9;}
 .tab{flex:1;padding:.52rem .2rem;font-size:.7rem;font-weight:700;color:rgba(255,255,255,.6);
   border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;
   text-transform:uppercase;letter-spacing:.03em}
@@ -256,6 +256,36 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
   font-weight:700;background:var(--verde-claro);color:var(--verde);
   border:1px solid #a8d5b5}
 .buscar-highlight{background:#fff176;border-radius:2px}
+/* ── Sort btn ── */
+.sort-btn{padding:.28rem .55rem;border-radius:20px;border:2px solid var(--borde);
+  background:var(--card);font-size:.72rem;font-weight:700;cursor:pointer;color:var(--gtxt)}
+.sort-btn.sel{border-color:var(--verde-mid);background:var(--verde-claro);color:var(--verde)}
+/* ── Próxima toma ── */
+.prox-box{background:var(--azul-claro);border-radius:10px;padding:.55rem .75rem;
+  margin-bottom:.4rem;display:flex;align-items:center;gap:.6rem}
+.prox-box .pb-icon{font-size:1.1rem;flex-shrink:0}
+.prox-box .pb-text{flex:1;font-size:.8rem;color:var(--azul);line-height:1.4}
+.prox-box .pb-hora{font-size:.95rem;font-weight:900;color:var(--azul);flex-shrink:0}
+/* ── Adherencia ── */
+.adh-box{background:var(--gris1);border-radius:10px;padding:.5rem .75rem;
+  margin-bottom:.4rem;font-size:.78rem;color:var(--gtxt)}
+.adh-bar-wrap{height:6px;background:var(--gris2);border-radius:3px;margin:.35rem 0 .2rem;overflow:hidden}
+.adh-bar{height:100%;border-radius:3px;background:var(--verde-mid);transition:width .4s}
+/* ── Turno icon historial ── */
+.turno-icon{font-size:1rem;flex-shrink:0;margin-top:.05rem}
+/* ── Síntoma cards ── */
+.sint-card{background:var(--card);border-radius:var(--radio);
+  box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:.4rem;
+  padding:.75rem .9rem;cursor:pointer}
+.sint-card:active{opacity:.8}
+.sint-top{display:flex;align-items:center;gap:.6rem}
+.sint-icon{font-size:1.3rem;flex-shrink:0}
+.sint-nombre{font-size:.9rem;font-weight:700}
+.sint-meta{font-size:.74rem;color:var(--gtxt);margin-top:.1rem}
+.sint-chips{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.4rem}
+.sint-chip{font-size:.65rem;padding:.15rem .45rem;border-radius:20px;
+  font-weight:700;background:#fce4ec;color:#880e4f;border:1px solid #f48fb1}
+.sint-temp{font-size:1.1rem;font-weight:900;color:var(--rojo);margin-left:auto;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -277,13 +307,20 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
     <button class="tab activo" onclick="switchTab('tomas')">Tomas</button>
     <button class="tab"        onclick="switchTab('historial')">Historial</button>
     <button class="tab"        onclick="switchTab('consultas')">Consultas</button>
+    <button class="tab"        onclick="switchTab('sintomas')">Síntomas</button>
     <button class="tab"        onclick="switchTab('docs')">Docs</button>
     <button class="tab"        onclick="switchTab('agregar')">＋ Med</button>
   </div>
 
   <!-- TOMAS -->
   <div class="scroll-area" id="tab-tomas">
-    <div class="sec">Medicamentos activos</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:.6rem .1rem .3rem">
+      <div class="sec" style="margin:0">Medicamentos activos</div>
+      <div style="display:flex;gap:.35rem">
+        <button class="sort-btn sel" id="sort-frec" onclick="setSort('frec',this)" title="Por frecuencia">⏱</button>
+        <button class="sort-btn"     id="sort-alfa" onclick="setSort('alfa',this)" title="Alfabético">A→Z</button>
+      </div>
+    </div>
     <div id="lista-meds"></div>
   </div>
 
@@ -308,6 +345,17 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
     <div id="lista-stats"></div>
     <div class="sec" id="hist-sec">Registros</div>
     <div id="lista-hist"><div class="empty">Cargando…</div></div>
+  </div>
+
+  <!-- SÍNTOMAS -->
+  <div class="scroll-area" id="tab-sintomas" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+      <div class="sec" style="margin:0">Registro de síntomas</div>
+      <button onclick="abrirNuevoSintoma()"
+        style="padding:.45rem .85rem;background:var(--verde);color:#fff;border:none;
+        border-radius:10px;font-size:.82rem;font-weight:800;cursor:pointer">＋ Registrar</button>
+    </div>
+    <div id="lista-sintomas"><div class="empty">Sin registros de síntomas.</div></div>
   </div>
 
   <!-- DOCS -->
@@ -398,14 +446,15 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
 
     <label class="f-label">Emoji</label>
     <div class="chips" id="chips-emoji">
-      <div class="chip sel" data-v="💊" onclick="selChip('emoji',this)">💊</div>
-      <div class="chip"     data-v="💉" onclick="selChip('emoji',this)">💉</div>
-      <div class="chip"     data-v="🩹" onclick="selChip('emoji',this)">🩹</div>
-      <div class="chip"     data-v="💧" onclick="selChip('emoji',this)">💧</div>
-      <div class="chip"     data-v="🌡️"onclick="selChip('emoji',this)">🌡️</div>
-      <div class="chip"     data-v="🧴" onclick="selChip('emoji',this)">🧴</div>
-      <div class="chip"     data-v="💆" onclick="selChip('emoji',this)">💆</div>
-      <div class="chip"     data-v="🫀" onclick="selChip('emoji',this)">🫀</div>
+      <div class="chip sel" data-v="🗒️" onclick="selChip('emoji',this)" title="Tableta">🗒️</div>
+      <div class="chip"     data-v="💊" onclick="selChip('emoji',this)" title="Píldora/Cápsula">💊</div>
+      <div class="chip"     data-v="💉" onclick="selChip('emoji',this)" title="Inyección/Ampula">💉</div>
+      <div class="chip"     data-v="🩹" onclick="selChip('emoji',this)" title="Parche/Tópico">🩹</div>
+      <div class="chip"     data-v="💧" onclick="selChip('emoji',this)" title="Gotas">💧</div>
+      <div class="chip"     data-v="🥄" onclick="selChip('emoji',this)" title="Jarabe/Cucharada">🥄</div>
+      <div class="chip"     data-v="🧴" onclick="selChip('emoji',this)" title="Pomada/Crema">🧴</div>
+      <div class="chip"     data-v="✉️" onclick="selChip('emoji',this)" title="Sobre">✉️</div>
+      <div class="chip"     data-v="🫖" onclick="selChip('emoji',this)" title="Bolsita de té">🫖</div>
     </div>
 
     <label class="f-label">Notas</label>
@@ -486,6 +535,56 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
   </div>
 </div>
 
+<!-- ══ OVERLAY SÍNTOMA ══ -->
+<div class="overlay" id="ov-sintoma">
+  <div class="sheet">
+    <div class="sheet-title" id="sintoma-titulo">🌡️ Registrar síntoma</div>
+
+    <label class="f-label">Paciente</label>
+    <div class="chips" id="chips-spaciente">
+      <div class="chip sel" data-v="Alex"   onclick="selChip('spaciente',this)">Alex</div>
+      <div class="chip"     data-v="Roxana" onclick="selChip('spaciente',this)">Roxana</div>
+      <div class="chip"     data-v="Yareni" onclick="selChip('spaciente',this)">Yareni</div>
+    </div>
+
+    <label class="f-label">Fecha y hora</label>
+    <input type="datetime-local" class="f-input" id="s-fecha">
+
+    <label class="f-label">Temperatura (°C) — opcional</label>
+    <input type="number" class="f-input" id="s-temp" min="34" max="42" step="0.1"
+           placeholder="ej. 38.5" inputmode="decimal">
+
+    <label class="f-label">Síntomas (puedes marcar varios)</label>
+    <div class="chips" id="chips-sintomas-sel" style="margin-bottom:.3rem">
+      <div class="chip" data-v="fiebre"       onclick="toggleSintoma(this)">🔥 Fiebre</div>
+      <div class="chip" data-v="dolor_cabeza" onclick="toggleSintoma(this)">🤕 Dolor de cabeza</div>
+      <div class="chip" data-v="dolor_cervical" onclick="toggleSintoma(this)">🦴 Dolor cervical</div>
+      <div class="chip" data-v="nausea"       onclick="toggleSintoma(this)">🤢 Náusea</div>
+      <div class="chip" data-v="vomito"       onclick="toggleSintoma(this)">🤮 Vómito</div>
+      <div class="chip" data-v="mareo"        onclick="toggleSintoma(this)">💫 Mareo</div>
+      <div class="chip" data-v="dolor_general"onclick="toggleSintoma(this)">😣 Dolor general</div>
+      <div class="chip" data-v="fatiga"       onclick="toggleSintoma(this)">😴 Fatiga</div>
+      <div class="chip" data-v="insomnio"     onclick="toggleSintoma(this)">🌙 Insomnio</div>
+      <div class="chip" data-v="otro"         onclick="toggleSintoma(this)">📌 Otro</div>
+    </div>
+
+    <label class="f-label">Vómitos en el día (cantidad)</label>
+    <input type="number" class="f-input" id="s-vomitos" min="0" max="50" inputmode="numeric"
+           placeholder="0">
+
+    <label class="f-label">Notas adicionales</label>
+    <textarea class="f-ta" id="s-notas" rows="3"
+              placeholder="ej. Dolor al mover el cuello, escala 7/10…"></textarea>
+
+    <button class="btn-confirm" id="btn-sintoma-ok" onclick="guardarSintoma()">💾 Guardar</button>
+    <button class="btn-cancel"  onclick="cerrarOv('ov-sintoma')">Cancelar</button>
+    <button id="btn-del-sintoma" onclick="eliminarSintoma()"
+      style="display:none;width:100%;padding:.75rem;background:var(--rojo-claro);color:var(--rojo);
+      border:2px solid #f5c6c6;border-radius:10px;font-size:.88rem;font-weight:700;
+      cursor:pointer;margin-top:.4rem">🗑 Eliminar</button>
+  </div>
+</div>
+
 <!-- ══ OVERLAY CONSULTA ══ -->
 <div class="overlay" id="ov-consulta">
   <div class="sheet">
@@ -516,7 +615,11 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
     <label class="f-label">Especialidad / Motivo</label>
     <input type="text" class="f-input" id="c-motivo" placeholder="ej. Traumatología, revisión cervical">
 
-    <label class="f-label">Transcripción / Notas de la consulta</label>
+    <label class="f-label">Resumen (puedes generarlo con IA)</label>
+    <textarea class="f-ta" id="c-resumen" rows="3"
+              placeholder="Diagnóstico, indicaciones principales, próxima cita…"></textarea>
+
+    <label class="f-label">Transcripción / Notas completas</label>
     <textarea class="f-ta" id="c-transcripcion" rows="6"
               placeholder="Pega aquí la transcripción o escribe lo que se habló…"
               style="min-height:120px"></textarea>
@@ -524,8 +627,9 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
     <label class="f-label">Link de audio (opcional)</label>
     <input type="url" class="f-input" id="c-audio" placeholder="https://drive.google.com/… o cualquier link">
 
-    <label class="f-label">Link de documentos / receta (opcional)</label>
-    <input type="url" class="f-input" id="c-doclink" placeholder="https://drive.google.com/…">
+    <label class="f-label">Links de documentos / recetas (uno por línea)</label>
+    <textarea class="f-ta" id="c-doclink" rows="3"
+      placeholder="https://drive.google.com/file1&#10;https://drive.google.com/file2"></textarea>
 
     <button class="btn-confirm" id="btn-consulta-ok" onclick="guardarConsulta()">💾 Guardar consulta</button>
     <button class="btn-cancel"  onclick="cerrarOv('ov-consulta')">Cancelar</button>
@@ -547,10 +651,14 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
         font-weight:700;cursor:pointer">✏️ Editar</button>
     </div>
     <div id="ver-meta" style="font-size:.78rem;color:var(--gtxt);margin-bottom:.8rem"></div>
+    <div id="ver-resumen"
+      style="font-size:.85rem;line-height:1.5;background:var(--verde-claro);
+      border-radius:10px;padding:.7rem .85rem;margin-bottom:.6rem;
+      color:var(--verde);font-weight:500;display:none"></div>
     <div id="ver-transcripcion"
       style="font-size:.88rem;line-height:1.6;white-space:pre-wrap;
       background:var(--gris1);border-radius:10px;padding:.8rem;
-      max-height:50vh;overflow-y:auto;margin-bottom:.8rem"></div>
+      max-height:45vh;overflow-y:auto;margin-bottom:.8rem"></div>
     <div id="ver-links" style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.8rem"></div>
     <button class="btn-cancel" onclick="cerrarOv('ov-ver-consulta')">Cerrar</button>
   </div>
@@ -645,25 +753,26 @@ window.toast=msg=>{const t=document.getElementById("toast");t.textContent=msg;
 
 /* ─── Overlays ──────────────────────────────────────────────────────── */
 window.cerrarOv=id=>document.getElementById(id).classList.remove("visible");
-["ov-quien","ov-edit","ov-doc","ov-consulta","ov-ver-consulta"].forEach(id=>{
+["ov-quien","ov-edit","ov-doc","ov-consulta","ov-ver-consulta","ov-sintoma"].forEach(id=>{
   document.getElementById(id).addEventListener("click",e=>{if(e.target.id===id)cerrarOv(id);});
 });
 
 /* ─── Chips ─────────────────────────────────────────────────────────── */
 const CS={via:"oral",freq:"cada 8h",para:"todos",emoji:"💊",doctipo:"radiografia",
-  cpaciente:"Alex",clugar:"hospital"};
+  cpaciente:"Alex",clugar:"hospital",spaciente:"Alex"};
 window.selChip=(g,el)=>{
   el.parentElement.querySelectorAll(".chip").forEach(c=>c.classList.remove("sel"));
   el.classList.add("sel"); CS[g]=el.dataset.v;
 };
 
 /* ─── Tabs ──────────────────────────────────────────────────────────── */
-const TABS=["tomas","historial","consultas","docs","agregar"];
+const TABS=["tomas","historial","consultas","sintomas","docs","agregar"];
 window.switchTab=tab=>{
   TABS.forEach(t=>{document.getElementById("tab-"+t).style.display=t===tab?"block":"none";});
   document.querySelectorAll(".tab").forEach((el,i)=>el.classList.toggle("activo",TABS[i]===tab));
   if(tab==="historial")  renderHistorial();
   if(tab==="consultas") renderConsultas();
+  if(tab==="sintomas")  renderSintomas();
   if(tab==="docs")      renderDocs();
   if(tab==="agregar")   resetFormMed();
 };
@@ -682,10 +791,24 @@ function actualizarUI(){
 // Cache última toma por med
 const _ultimaToma={};
 
+let _sortMode="frec"; // "frec" | "alfa"
+window.setSort=(mode,el)=>{
+  _sortMode=mode;
+  document.querySelectorAll(".sort-btn").forEach(b=>b.classList.remove("sel"));
+  el.classList.add("sel");
+  renderMeds();
+};
+
 async function renderMeds(){
   const lista=document.getElementById("lista-meds");
   const persona=getPersona();
-  const meds=loadMeds().filter(m=>m.activo&&(m.para==="todos"||m.para===persona));
+  let meds=loadMeds().filter(m=>m.activo&&(m.para==="todos"||m.para===persona));
+  // Sort
+  if(_sortMode==="alfa") meds.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  else { // frec: cada 8h < cada 12h < cada 24h < sos
+    const orden={["cada 8h"]:1,["cada 12h"]:2,["cada 24h"]:3,sos:4,otro:5};
+    meds.sort((a,b)=>(orden[a.frecuencia]||9)-(orden[b.frecuencia]||9));
+  }
   lista.innerHTML="";
   if(!meds.length){lista.innerHTML=`<div class="empty">No hay medicamentos para ${persona}.</div>`;return;}
   for(const m of meds) lista.appendChild(await buildCard(m,persona));
@@ -726,6 +849,7 @@ async function buildCard(m,persona){
   const timerTxt=ultimaTs?tiempoDesde(ultimaTs):"sin registro";
   const timerCls=ultimaTs?timerClass(ultimaTs,m.frecuencia):"ok";
 
+  const adhHtml = await buildAdherencia(m, persona);
   card.innerHTML=`
     <div class="med-head" onclick="toggleCard('${m.id}')">
       <div class="med-icon">${m.emoji}</div>
@@ -745,6 +869,8 @@ async function buildCard(m,persona){
         <span class="td-time" id="td-${m.id}">${tiempoDesde(ultimaTs)}</span>
       </div>`:""}
       ${miniHistHtml}
+      ${buildProxToma(m, ultimaTs)}
+      ${adhHtml}
       <div class="ex-label">Registrar toma</div>
       ${buildRegBox(m)}
       <div class="ex-label">Hora de administración</div>
@@ -758,6 +884,74 @@ async function buildCard(m,persona){
       <button class="link-edit" onclick="editarMed('${m.id}')">✏️ Editar medicamento</button>
     </div>`;
   return card;
+}
+
+/* ─── Próxima toma ──────────────────────────────────────────────────── */
+function buildProxToma(m, ultimaTs){
+  if(!ultimaTs) return "";
+  const freqH={["cada 8h"]:8,["cada 12h"]:12,["cada 24h"]:24}[m.frecuencia];
+  if(!freqH) return ""; // sos u otro no tiene hora fija
+  const proxTs = ultimaTs + freqH*3600000;
+  const ahoraMs = Date.now();
+  const diffMin = Math.round((proxTs - ahoraMs)/60000);
+  const proxDate = new Date(proxTs);
+  const horaProx = horaCorta(proxDate);
+  let txt, color="var(--azul)";
+  if(diffMin > 0){
+    const h=Math.floor(diffMin/60), min=diffMin%60;
+    txt = h>0 ? `Próxima en ${h}h ${min>0?min+"min":""}` : `Próxima en ${diffMin}min`;
+  } else {
+    txt = `¡Toma pendiente! (hace ${Math.abs(diffMin)}min)`;
+    color="var(--rojo)";
+  }
+  return `<div class="prox-box" style="${diffMin<=0?"background:var(--rojo-claro)":""}">
+    <span class="pb-icon">🔔</span>
+    <span class="pb-text" style="color:${color}">${txt}</span>
+    <span class="pb-hora" style="color:${color}">${horaProx}</span>
+  </div>`;
+}
+
+/* ─── Adherencia ─────────────────────────────────────────────────────── */
+// Cache adherencia por med
+const _adherencia={};
+
+async function buildAdherencia(m, persona){
+  // Calcula % de tomas a tiempo (dentro de ±30min de la hora esperada)
+  const freqH={["cada 8h"]:8,["cada 12h"]:12,["cada 24h"]:24}[m.frecuencia];
+  if(!freqH) return "";
+  if(_adherencia[m.id]) return renderAdh(_adherencia[m.id]);
+  try{
+    const q=query(collection(db,"meds_log"),where("medId","==",m.id),limit(30));
+    const snap=await getDocs(q);
+    const tomas=snap.docs.map(d=>d.data().creadoEn).filter(Boolean).sort((a,b)=>a-b);
+    if(tomas.length<2){return "";}
+    let puntuales=0, total=0, sumRetrasoMin=0;
+    for(let i=1;i<tomas.length;i++){
+      const diff=Math.abs((tomas[i]-tomas[i-1])/60000 - freqH*60);
+      const retraso=(tomas[i]-tomas[i-1])/60000 - freqH*60;
+      total++;
+      sumRetrasoMin+=retraso;
+      if(diff<=30) puntuales++;
+    }
+    const pct=Math.round(puntuales/total*100);
+    const avgRetraso=Math.round(sumRetrasoMin/total);
+    _adherencia[m.id]={pct, avgRetraso, total};
+    return renderAdh(_adherencia[m.id]);
+  }catch{return "";}
+}
+
+function renderAdh({pct,avgRetraso,total}){
+  const color=pct>=80?"var(--verde-mid)":pct>=50?"var(--naranja)":"var(--rojo)";
+  const retrasoTxt=avgRetraso>0?`+${avgRetraso}min promedio`:
+    avgRetraso<0?`${avgRetraso}min adelantado`:"puntual";
+  return `<div class="adh-box">
+    <div style="display:flex;justify-content:space-between">
+      <span>Adherencia (${total} tomas)</span>
+      <span style="font-weight:700;color:${color}">${pct}%</span>
+    </div>
+    <div class="adh-bar-wrap"><div class="adh-bar" style="width:${pct}%;background:${color}"></div></div>
+    <div>${retrasoTxt}</div>
+  </div>`;
 }
 
 /* ─── Caja de registro simplificada ─────────────────────────────────── */
@@ -974,6 +1168,15 @@ window.registrar=async id=>{
   }
 };
 
+/* ─── Turno icon ────────────────────────────────────────────────────── */
+function turnoIcon(hora){
+  if(!hora) return "⏰";
+  const h=parseInt(hora.split(":")[0]);
+  if(h>=19||h<4) return "🌙";  // 7pm–3:59am
+  if(h>=4&&h<12) return "🌅";  // 4am–11:59am
+  return "☀️";                  // 12pm–6:59pm
+}
+
 /* ─── Update timer pills (cada min) ─────────────────────────────────── */
 function updateTimerPills(){
   const meds=loadMeds().filter(m=>m.activo);
@@ -1025,14 +1228,17 @@ window.renderHistorial=async()=>{
     document.getElementById("hist-sec").textContent=`${desde||"inicio"} → ${hasta||"hoy"}`;
   }
 
-  const filters=[orderBy("creadoEn","desc"),limit(100)];
+  // Sin combinar where+orderBy en campos distintos para evitar índices
+  // Filtramos por persona en JS si es necesario
+  const filters=[orderBy("creadoEn","desc"),limit(200)];
   if(desdeTs) filters.unshift(where("creadoEn",">=",desdeTs));
-  if(persona) filters.unshift(where("persona","==",persona));
+  // NO agregar where persona aquí — filtrar en JS
 
   try{
     const q=query(collection(db,"meds_log"),...filters);
     const snap=await getDocs(q);
-    const docs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    let docs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(persona) docs=docs.filter(d=>d.persona===persona);
 
     // Resumen por med
     const resumen={};
@@ -1054,7 +1260,10 @@ window.renderHistorial=async()=>{
     if(!docs.length){lista.innerHTML='<div class="empty">Sin registros.</div>';return;}
     lista.innerHTML=docs.map(d=>`
       <div class="log-item" onclick="abrirEdit('${d.id}','${d.persona}',${d.cantidad||1},'${d.unidad||""}',${d.creadoEn},'${d.nota||""}')">
-        <div class="li-icon">${d.via==="im"?"💉":"💊"}</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:.15rem;flex-shrink:0">
+          <div class="li-icon">${d.via==="im"?"💉":"💊"}</div>
+          <div class="turno-icon">${turnoIcon(d.hora)}</div>
+        </div>
         <div style="flex:1">
           <div class="li-nombre">${d.nombre}</div>
           <div class="li-dosis">${d.dosisLabel||d.cantidad+" "+d.unidad}</div>
@@ -1229,7 +1438,111 @@ window.eliminarMed=()=>{
   toast("🗑 Eliminado"); switchTab("tomas"); renderMeds();
 };
 
-/* ─── Consultas ──────────────────────────────────────────────────────── */
+/* ─── Síntomas ───────────────────────────────────────────────────────── */
+const LS_SINT="meds_sintomas_v1";
+const loadSint=()=>{try{return JSON.parse(localStorage.getItem(LS_SINT))||[];}catch{return[];}};
+const saveSint=a=>localStorage.setItem(LS_SINT,JSON.stringify(a));
+
+let _editSintIdx=null;
+const _sintomasSeleccionados=new Set();
+
+window.toggleSintoma=el=>{
+  const v=el.dataset.v;
+  el.classList.toggle("sel");
+  if(_sintomasSeleccionados.has(v)) _sintomasSeleccionados.delete(v);
+  else _sintomasSeleccionados.add(v);
+};
+
+window.abrirNuevoSintoma=()=>{
+  _editSintIdx=null;
+  _sintomasSeleccionados.clear();
+  document.getElementById("sintoma-titulo").textContent="🌡️ Registrar síntoma";
+  document.getElementById("s-fecha").value=dtLocal(now());
+  document.getElementById("s-temp").value="";
+  document.getElementById("s-vomitos").value="";
+  document.getElementById("s-notas").value="";
+  document.querySelectorAll("#chips-sintomas-sel .chip").forEach(c=>c.classList.remove("sel"));
+  document.getElementById("btn-del-sintoma").style.display="none";
+  // Preseleccionar persona actual
+  CS.spaciente=getPersona();
+  document.querySelectorAll("#chips-spaciente .chip").forEach(c=>
+    c.classList.toggle("sel",c.dataset.v===CS.spaciente));
+  document.getElementById("ov-sintoma").classList.add("visible");
+};
+
+window.guardarSintoma=()=>{
+  const fecha=document.getElementById("s-fecha").value;
+  if(!fecha){toast("⚠️ Falta fecha/hora");return;}
+  const temp=parseFloat(document.getElementById("s-temp").value)||null;
+  const vomitos=parseInt(document.getElementById("s-vomitos").value)||0;
+  const notas=document.getElementById("s-notas").value.trim();
+  const sintomas=[..._sintomasSeleccionados];
+  const dt=new Date(fecha);
+  const sint=loadSint();
+  const entry={
+    paciente:CS.spaciente, fecha:fechaLocal(dt), hora:horaLocal(dt),
+    temp, vomitos:vomitos||null, sintomas, notas:notas||null,
+    creadoEn:dt.getTime()
+  };
+  if(_editSintIdx!=null) sint[_editSintIdx]=entry; else sint.unshift(entry);
+  saveSint(sint); cerrarOv("ov-sintoma"); toast("✅ Síntoma registrado"); renderSintomas();
+};
+
+window.eliminarSintoma=()=>{
+  if(_editSintIdx==null) return;
+  if(!confirm("¿Eliminar este registro?")) return;
+  const sint=loadSint(); sint.splice(_editSintIdx,1);
+  saveSint(sint); cerrarOv("ov-sintoma"); toast("🗑 Eliminado"); renderSintomas();
+};
+
+function editarSintoma(idx){
+  const s=loadSint()[idx]; _editSintIdx=idx;
+  _sintomasSeleccionados.clear();
+  document.getElementById("sintoma-titulo").textContent="✏️ Editar síntoma";
+  document.getElementById("s-fecha").value=`${s.fecha}T${s.hora.slice(0,5)}`;
+  document.getElementById("s-temp").value=s.temp||"";
+  document.getElementById("s-vomitos").value=s.vomitos||"";
+  document.getElementById("s-notas").value=s.notas||"";
+  document.querySelectorAll("#chips-sintomas-sel .chip").forEach(c=>{
+    const sel=(s.sintomas||[]).includes(c.dataset.v);
+    c.classList.toggle("sel",sel);
+    if(sel) _sintomasSeleccionados.add(c.dataset.v);
+  });
+  CS.spaciente=s.paciente||"Alex";
+  document.querySelectorAll("#chips-spaciente .chip").forEach(c=>
+    c.classList.toggle("sel",c.dataset.v===CS.spaciente));
+  document.getElementById("btn-del-sintoma").style.display="block";
+  document.getElementById("ov-sintoma").classList.add("visible");
+}
+
+const SINT_LABELS={fiebre:"🔥 Fiebre",dolor_cabeza:"🤕 Cabeza",dolor_cervical:"🦴 Cervical",
+  nausea:"🤢 Náusea",vomito:"🤮 Vómito",mareo:"💫 Mareo",
+  dolor_general:"😣 Dolor",fatiga:"😴 Fatiga",insomnio:"🌙 Insomnio",otro:"📌 Otro"};
+
+function renderSintomas(){
+  const lista=document.getElementById("lista-sintomas");
+  const sints=loadSint();
+  if(!sints.length){lista.innerHTML='<div class="empty">Sin registros de síntomas.</div>';return;}
+  lista.innerHTML=sints.map((s,i)=>{
+    const chips=(s.sintomas||[]).map(v=>`<span class="sint-chip">${SINT_LABELS[v]||v}</span>`).join("");
+    const tempHtml=s.temp?`<span class="sint-temp">${s.temp}°C</span>`:"";
+    const vomHtml=s.vomitos?`<span class="sint-chip" style="background:#fff3e0;color:var(--naranja);border-color:#ffcc80">🤮 ×${s.vomitos}</span>`:"";
+    return `<div class="sint-card" onclick="editarSintoma(${i})">
+      <div class="sint-top">
+        <div class="sint-icon">🌡️</div>
+        <div style="flex:1">
+          <div class="sint-nombre">${s.paciente}</div>
+          <div class="sint-meta">${s.fecha} · ${s.hora}</div>
+        </div>
+        ${tempHtml}
+      </div>
+      <div class="sint-chips">${chips}${vomHtml}</div>
+      ${s.notas?`<div style="font-size:.78rem;color:var(--gtxt);margin-top:.35rem">${s.notas}</div>`:""}
+    </div>`;
+  }).join("");
+}
+
+/* ─── Consultas ───────────────────────────────────────────────────────── */
 const LS_CONSULTAS="meds_consultas_v1";
 const loadConsultas=()=>{try{return JSON.parse(localStorage.getItem(LS_CONSULTAS))||[];}catch{return[];}};
 const saveConsultas=a=>localStorage.setItem(LS_CONSULTAS,JSON.stringify(a));
@@ -1244,6 +1557,7 @@ window.abrirNuevaConsulta=()=>{
   document.getElementById("c-lugar").value="";
   document.getElementById("c-motivo").value="";
   document.getElementById("c-transcripcion").value="";
+  document.getElementById("c-resumen").value="";
   document.getElementById("c-audio").value="";
   document.getElementById("c-doclink").value="";
   document.getElementById("btn-del-consulta").style.display="none";
@@ -1267,10 +1581,12 @@ window.guardarConsulta=()=>{
   if(!fecha){toast("⚠️ Falta la fecha");return;}
   if(!motivo&&!transcripcion){toast("⚠️ Agrega motivo o transcripción");return;}
   const consultas=loadConsultas();
+  const resumen=document.getElementById("c-resumen").value.trim();
   const entry={
     fecha, paciente:CS.cpaciente, tipoLugar:CS.clugar,
-    lugar, motivo, transcripcion, audio:audio||null,
-    doclink:doclink||null, creadoEn:Date.now()
+    lugar, motivo, resumen:resumen||null, transcripcion, audio:audio||null,
+    doclinks:doclink?doclink.split("\n").map(s=>s.trim()).filter(Boolean):[],
+    creadoEn:Date.now()
   };
   if(_editConsultaIdx!=null) consultas[_editConsultaIdx]=entry;
   else consultas.unshift(entry);
@@ -1304,9 +1620,11 @@ function abrirEditarConsulta(idx){
   document.getElementById("c-fecha").value=c.fecha||"";
   document.getElementById("c-lugar").value=c.lugar||"";
   document.getElementById("c-motivo").value=c.motivo||"";
+  document.getElementById("c-resumen").value=c.resumen||"";
   document.getElementById("c-transcripcion").value=c.transcripcion||"";
   document.getElementById("c-audio").value=c.audio||"";
-  document.getElementById("c-doclink").value=c.doclink||"";
+  const dlinks=c.doclinks||(c.doclink?[c.doclink]:[]);
+  document.getElementById("c-doclink").value=dlinks.join("\n");
   document.getElementById("btn-del-consulta").style.display="block";
   ["cpaciente","clugar"].forEach(g=>{
     const val=g==="cpaciente"?c.paciente:c.tipoLugar;
@@ -1336,14 +1654,21 @@ function verConsulta(idx){
     document.getElementById("ver-transcripcion").textContent=txt;
   }
   // Links
+  // Resumen
+  const resumenEl=document.getElementById("ver-resumen");
+  if(c.resumen){
+    resumenEl.style.display="block";
+    resumenEl.textContent=c.resumen;
+  } else { resumenEl.style.display="none"; }
   const linksEl=document.getElementById("ver-links");
   linksEl.innerHTML="";
   if(c.audio) linksEl.innerHTML+=`<a href="${c.audio}" target="_blank"
-    style="display:flex;align-items:center;gap:.4rem;color:var(--azul);font-size:.85rem;font-weight:600">
+    style="display:flex;align-items:center;gap:.4rem;color:var(--azul);font-size:.85rem;font-weight:600;padding:.4rem 0">
     🎵 Escuchar grabación</a>`;
-  if(c.doclink) linksEl.innerHTML+=`<a href="${c.doclink}" target="_blank"
-    style="display:flex;align-items:center;gap:.4rem;color:var(--azul);font-size:.85rem;font-weight:600">
-    📄 Ver documento</a>`;
+  const docs=c.doclinks||( c.doclink?[c.doclink]:[] );
+  docs.forEach((url,i)=>{ linksEl.innerHTML+=`<a href="${url}" target="_blank"
+    style="display:flex;align-items:center;gap:.4rem;color:var(--azul);font-size:.85rem;font-weight:600;padding:.4rem 0">
+    📄 Documento ${docs.length>1?i+1:""}</a>`; });
   document.getElementById("ov-ver-consulta").classList.add("visible");
 }
 
