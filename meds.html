@@ -32,7 +32,8 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
   padding:.22rem .6rem;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:.3rem}
 
 /* ── Tabs ── */
-.tabs{display:flex;background:var(--verde);padding:0 .5rem}
+.tabs{display:flex;background:var(--verde);padding:0 .5rem;
+  position:sticky;top:0;z-index:9;}
 .tab{flex:1;padding:.52rem .2rem;font-size:.7rem;font-weight:700;color:rgba(255,255,255,.6);
   border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;
   text-transform:uppercase;letter-spacing:.03em}
@@ -591,12 +592,13 @@ async function buildCard(m,persona){
   // Última toma (cualquier persona si es "todos", o persona actual)
   let ultimaTs=null, miniHistHtml="";
   try{
-    const q=query(collection(db,"meds_log"),
-      where("medId","==",m.id),
-      ...(m.para!=="todos"?[where("persona","==",persona)]:[]),
-      orderBy("creadoEn","desc"),limit(3));
+    // Sin orderBy para evitar índices compuestos por cada med
+    const q=query(collection(db,"meds_log"),where("medId","==",m.id),limit(20));
     const snap=await getDocs(q);
-    const rows=snap.docs.map(d=>d.data());
+    const rows=snap.docs.map(d=>d.data())
+      .filter(r=>m.para==="todos"||r.persona===persona)
+      .sort((a,b)=>b.creadoEn-a.creadoEn)
+      .slice(0,3);
     if(rows.length){
       ultimaTs=rows[0].creadoEn;
       _ultimaToma[m.id]=ultimaTs;
