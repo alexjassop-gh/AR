@@ -419,6 +419,9 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
     <input type="text" class="f-input" id="edit-nota" placeholder="opcional">
     <button class="btn-confirm" id="btn-edit-ok" onclick="guardarEdit()">Guardar cambios</button>
     <button class="btn-cancel"  onclick="cerrarOv('ov-edit')">Cancelar</button>
+    <button style="width:100%;padding:.75rem;background:var(--rojo-claro);color:var(--rojo);
+      border:2px solid #f5c6c6;border-radius:10px;font-size:.88rem;font-weight:700;
+      cursor:pointer;margin-top:.4rem" onclick="eliminarToma()">🗑 Eliminar este registro</button>
   </div>
 </div>
 
@@ -448,7 +451,7 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, updateDoc, doc,
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc,
          query, where, orderBy, limit, getDocs }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -983,6 +986,16 @@ window.guardarEdit=async()=>{
     cerrarOv("ov-edit"); toast("✅ Toma actualizada"); renderHistorial();
   }catch(e){toast("⚠️ "+e.message);}
   btn.disabled=false; btn.textContent="Guardar cambios";
+};
+
+/* ─── Eliminar toma ──────────────────────────────────────────────────── */
+window.eliminarToma=async()=>{
+  if(!_editId) return;
+  if(!confirm("¿Eliminar este registro? No se puede deshacer.")) return;
+  try{
+    await deleteDoc(doc(db,"meds_log",_editId));
+    cerrarOv("ov-edit"); toast("🗑 Registro eliminado"); renderHistorial();
+  }catch(e){ toast("⚠️ "+e.message); }
 };
 
 /* ─── Docs ──────────────────────────────────────────────────────────── */
