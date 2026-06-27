@@ -239,6 +239,23 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
   font-size:.92rem;font-weight:700;cursor:pointer}
 @keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
 .empty{text-align:center;padding:1.8rem 1rem;color:var(--gtxt);font-size:.86rem}
+/* ── Consulta cards ── */
+.consulta-card{background:var(--card);border-radius:var(--radio);
+  box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:.45rem;
+  padding:.8rem .9rem;cursor:pointer}
+.consulta-card:active{opacity:.8}
+.consulta-top{display:flex;align-items:flex-start;gap:.6rem}
+.consulta-icon{font-size:1.4rem;flex-shrink:0;margin-top:.1rem}
+.consulta-nombre{font-size:.92rem;font-weight:700;line-height:1.2}
+.consulta-meta{font-size:.75rem;color:var(--gtxt);margin-top:.15rem}
+.consulta-preview{font-size:.78rem;color:var(--gtxt);margin-top:.4rem;
+  line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden}
+.consulta-chips{display:flex;gap:.3rem;margin-top:.4rem;flex-wrap:wrap}
+.consulta-chip{font-size:.65rem;padding:.15rem .45rem;border-radius:20px;
+  font-weight:700;background:var(--verde-claro);color:var(--verde);
+  border:1px solid #a8d5b5}
+.buscar-highlight{background:#fff176;border-radius:2px}
 </style>
 </head>
 <body>
@@ -259,6 +276,7 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
   <div class="tabs">
     <button class="tab activo" onclick="switchTab('tomas')">Tomas</button>
     <button class="tab"        onclick="switchTab('historial')">Historial</button>
+    <button class="tab"        onclick="switchTab('consultas')">Consultas</button>
     <button class="tab"        onclick="switchTab('docs')">Docs</button>
     <button class="tab"        onclick="switchTab('agregar')">＋ Med</button>
   </div>
@@ -297,6 +315,26 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
     <div class="sec">Documentos médicos (Google Drive)</div>
     <div id="lista-docs"></div>
     <button class="btn-drive" onclick="abrirNuevoDoc()">📎 Agregar documento de Drive</button>
+  </div>
+
+  <!-- CONSULTAS -->
+  <div class="scroll-area" id="tab-consultas" style="display:none">
+    <!-- Buscador -->
+    <div style="position:sticky;top:0;background:var(--verde-bg);padding:.4rem 0 .5rem;z-index:5">
+      <div style="display:flex;gap:.4rem">
+        <input type="text" class="f-input" id="consulta-buscar"
+               placeholder="🔍 Buscar en transcripciones…"
+               oninput="buscarConsultas()"
+               style="font-size:.88rem;padding:.55rem .75rem">
+        <button onclick="abrirNuevaConsulta()"
+          style="padding:.55rem .9rem;background:var(--verde);color:#fff;border:none;
+          border-radius:10px;font-size:.88rem;font-weight:800;cursor:pointer;white-space:nowrap">
+          ＋ Nueva
+        </button>
+      </div>
+    </div>
+    <div class="sec" id="consultas-sec">Todas las consultas</div>
+    <div id="lista-consultas"><div class="empty">Sin consultas registradas.</div></div>
   </div>
 
   <!-- AGREGAR MED -->
@@ -448,6 +486,76 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
   </div>
 </div>
 
+<!-- ══ OVERLAY CONSULTA ══ -->
+<div class="overlay" id="ov-consulta">
+  <div class="sheet">
+    <div class="sheet-title" id="consulta-titulo">🩺 Nueva consulta</div>
+
+    <label class="f-label">Fecha</label>
+    <input type="date" class="f-input" id="c-fecha">
+
+    <label class="f-label">Paciente</label>
+    <div class="chips" id="chips-cpaciente">
+      <div class="chip sel" data-v="Alex"   onclick="selChip('cpaciente',this)">Alex</div>
+      <div class="chip"     data-v="Roxana" onclick="selChip('cpaciente',this)">Roxana</div>
+      <div class="chip"     data-v="Yareni" onclick="selChip('cpaciente',this)">Yareni</div>
+    </div>
+
+    <label class="f-label">Tipo de lugar</label>
+    <div class="chips" id="chips-clugar">
+      <div class="chip sel" data-v="hospital"   onclick="selChip('clugar',this)">🏥 Hospital</div>
+      <div class="chip"     data-v="clinica"     onclick="selChip('clugar',this)">🏨 Clínica</div>
+      <div class="chip"     data-v="particular"  onclick="selChip('clugar',this)">👨‍⚕️ Particular</div>
+      <div class="chip"     data-v="simi"        onclick="selChip('clugar',this)">💊 Simi</div>
+      <div class="chip"     data-v="otro"        onclick="selChip('clugar',this)">📌 Otro</div>
+    </div>
+
+    <label class="f-label">Nombre del lugar / médico</label>
+    <input type="text" class="f-input" id="c-lugar" placeholder="ej. IMSS, Dr. García, Farmacia Simi">
+
+    <label class="f-label">Especialidad / Motivo</label>
+    <input type="text" class="f-input" id="c-motivo" placeholder="ej. Traumatología, revisión cervical">
+
+    <label class="f-label">Transcripción / Notas de la consulta</label>
+    <textarea class="f-ta" id="c-transcripcion" rows="6"
+              placeholder="Pega aquí la transcripción o escribe lo que se habló…"
+              style="min-height:120px"></textarea>
+
+    <label class="f-label">Link de audio (opcional)</label>
+    <input type="url" class="f-input" id="c-audio" placeholder="https://drive.google.com/… o cualquier link">
+
+    <label class="f-label">Link de documentos / receta (opcional)</label>
+    <input type="url" class="f-input" id="c-doclink" placeholder="https://drive.google.com/…">
+
+    <button class="btn-confirm" id="btn-consulta-ok" onclick="guardarConsulta()">💾 Guardar consulta</button>
+    <button class="btn-cancel"  onclick="cerrarOv('ov-consulta')">Cancelar</button>
+    <button id="btn-del-consulta" onclick="eliminarConsulta()"
+      style="display:none;width:100%;padding:.75rem;background:var(--rojo-claro);color:var(--rojo);
+      border:2px solid #f5c6c6;border-radius:10px;font-size:.88rem;font-weight:700;
+      cursor:pointer;margin-top:.4rem">🗑 Eliminar consulta</button>
+  </div>
+</div>
+
+<!-- ══ OVERLAY VER CONSULTA ══ -->
+<div class="overlay" id="ov-ver-consulta">
+  <div class="sheet">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem">
+      <div class="sheet-title" id="ver-titulo" style="margin-bottom:0;flex:1">Consulta</div>
+      <button id="btn-editar-consulta" onclick="editarConsultaActual()"
+        style="padding:.4rem .8rem;background:var(--verde-claro);color:var(--verde);
+        border:2px solid var(--verde-mid);border-radius:8px;font-size:.8rem;
+        font-weight:700;cursor:pointer">✏️ Editar</button>
+    </div>
+    <div id="ver-meta" style="font-size:.78rem;color:var(--gtxt);margin-bottom:.8rem"></div>
+    <div id="ver-transcripcion"
+      style="font-size:.88rem;line-height:1.6;white-space:pre-wrap;
+      background:var(--gris1);border-radius:10px;padding:.8rem;
+      max-height:50vh;overflow-y:auto;margin-bottom:.8rem"></div>
+    <div id="ver-links" style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.8rem"></div>
+    <button class="btn-cancel" onclick="cerrarOv('ov-ver-consulta')">Cerrar</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -537,23 +645,25 @@ window.toast=msg=>{const t=document.getElementById("toast");t.textContent=msg;
 
 /* ─── Overlays ──────────────────────────────────────────────────────── */
 window.cerrarOv=id=>document.getElementById(id).classList.remove("visible");
-["ov-quien","ov-edit","ov-doc"].forEach(id=>{
+["ov-quien","ov-edit","ov-doc","ov-consulta","ov-ver-consulta"].forEach(id=>{
   document.getElementById(id).addEventListener("click",e=>{if(e.target.id===id)cerrarOv(id);});
 });
 
 /* ─── Chips ─────────────────────────────────────────────────────────── */
-const CS={via:"oral",freq:"cada 8h",para:"todos",emoji:"💊",doctipo:"radiografia"};
+const CS={via:"oral",freq:"cada 8h",para:"todos",emoji:"💊",doctipo:"radiografia",
+  cpaciente:"Alex",clugar:"hospital"};
 window.selChip=(g,el)=>{
   el.parentElement.querySelectorAll(".chip").forEach(c=>c.classList.remove("sel"));
   el.classList.add("sel"); CS[g]=el.dataset.v;
 };
 
 /* ─── Tabs ──────────────────────────────────────────────────────────── */
-const TABS=["tomas","historial","docs","agregar"];
+const TABS=["tomas","historial","consultas","docs","agregar"];
 window.switchTab=tab=>{
   TABS.forEach(t=>{document.getElementById("tab-"+t).style.display=t===tab?"block":"none";});
   document.querySelectorAll(".tab").forEach((el,i)=>el.classList.toggle("activo",TABS[i]===tab));
-  if(tab==="historial") renderHistorial();
+  if(tab==="historial")  renderHistorial();
+  if(tab==="consultas") renderConsultas();
   if(tab==="docs")      renderDocs();
   if(tab==="agregar")   resetFormMed();
 };
@@ -1118,6 +1228,183 @@ window.eliminarMed=()=>{
   saveMeds(loadMeds().map(m=>m.id===_editMedId?{...m,activo:false}:m));
   toast("🗑 Eliminado"); switchTab("tomas"); renderMeds();
 };
+
+/* ─── Consultas ──────────────────────────────────────────────────────── */
+const LS_CONSULTAS="meds_consultas_v1";
+const loadConsultas=()=>{try{return JSON.parse(localStorage.getItem(LS_CONSULTAS))||[];}catch{return[];}};
+const saveConsultas=a=>localStorage.setItem(LS_CONSULTAS,JSON.stringify(a));
+
+let _editConsultaIdx=null;
+let _verConsultaIdx=null;
+
+window.abrirNuevaConsulta=()=>{
+  _editConsultaIdx=null;
+  document.getElementById("consulta-titulo").textContent="🩺 Nueva consulta";
+  document.getElementById("c-fecha").value=fechaLocal(now());
+  document.getElementById("c-lugar").value="";
+  document.getElementById("c-motivo").value="";
+  document.getElementById("c-transcripcion").value="";
+  document.getElementById("c-audio").value="";
+  document.getElementById("c-doclink").value="";
+  document.getElementById("btn-del-consulta").style.display="none";
+  // reset chips
+  ["cpaciente","clugar"].forEach(g=>{
+    const defaults={cpaciente:"Alex",clugar:"hospital"};
+    document.querySelectorAll(`#chips-c${g.slice(1)} .chip`).forEach(c=>
+      c.classList.toggle("sel",c.dataset.v===defaults[g]));
+    CS[g]=defaults[g];
+  });
+  document.getElementById("ov-consulta").classList.add("visible");
+};
+
+window.guardarConsulta=()=>{
+  const fecha=document.getElementById("c-fecha").value;
+  const lugar=document.getElementById("c-lugar").value.trim();
+  const motivo=document.getElementById("c-motivo").value.trim();
+  const transcripcion=document.getElementById("c-transcripcion").value.trim();
+  const audio=document.getElementById("c-audio").value.trim();
+  const doclink=document.getElementById("c-doclink").value.trim();
+  if(!fecha){toast("⚠️ Falta la fecha");return;}
+  if(!motivo&&!transcripcion){toast("⚠️ Agrega motivo o transcripción");return;}
+  const consultas=loadConsultas();
+  const entry={
+    fecha, paciente:CS.cpaciente, tipoLugar:CS.clugar,
+    lugar, motivo, transcripcion, audio:audio||null,
+    doclink:doclink||null, creadoEn:Date.now()
+  };
+  if(_editConsultaIdx!=null) consultas[_editConsultaIdx]=entry;
+  else consultas.unshift(entry);
+  saveConsultas(consultas);
+  cerrarOv("ov-consulta");
+  toast("✅ Consulta guardada");
+  renderConsultas();
+};
+
+window.eliminarConsulta=()=>{
+  if(_editConsultaIdx==null) return;
+  if(!confirm("¿Eliminar esta consulta?")) return;
+  const consultas=loadConsultas();
+  consultas.splice(_editConsultaIdx,1);
+  saveConsultas(consultas);
+  cerrarOv("ov-consulta");
+  toast("🗑 Consulta eliminada");
+  renderConsultas();
+};
+
+window.editarConsultaActual=()=>{
+  cerrarOv("ov-ver-consulta");
+  if(_verConsultaIdx==null) return;
+  abrirEditarConsulta(_verConsultaIdx);
+};
+
+function abrirEditarConsulta(idx){
+  const c=loadConsultas()[idx];
+  _editConsultaIdx=idx;
+  document.getElementById("consulta-titulo").textContent="✏️ Editar consulta";
+  document.getElementById("c-fecha").value=c.fecha||"";
+  document.getElementById("c-lugar").value=c.lugar||"";
+  document.getElementById("c-motivo").value=c.motivo||"";
+  document.getElementById("c-transcripcion").value=c.transcripcion||"";
+  document.getElementById("c-audio").value=c.audio||"";
+  document.getElementById("c-doclink").value=c.doclink||"";
+  document.getElementById("btn-del-consulta").style.display="block";
+  ["cpaciente","clugar"].forEach(g=>{
+    const val=g==="cpaciente"?c.paciente:c.tipoLugar;
+    document.querySelectorAll(`#chips-c${g.slice(1)} .chip`).forEach(ch=>
+      ch.classList.toggle("sel",ch.dataset.v===val));
+    CS[g]=val||CS[g];
+  });
+  document.getElementById("ov-consulta").classList.add("visible");
+}
+
+function verConsulta(idx){
+  _verConsultaIdx=idx;
+  const c=loadConsultas()[idx];
+  const lugarIcon=c.tipoLugar==="hospital"?"🏥":c.tipoLugar==="clinica"?"🏨":
+    c.tipoLugar==="particular"?"👨‍⚕️":c.tipoLugar==="simi"?"💊":"📌";
+  document.getElementById("ver-titulo").textContent=`${lugarIcon} ${c.motivo||"Consulta"}`;
+  document.getElementById("ver-meta").innerHTML=
+    `<strong>${c.paciente}</strong> · ${c.fecha} · ${c.lugar||"Sin lugar"}`;
+  // Resaltar búsqueda en transcripción
+  const busq=document.getElementById("consulta-buscar").value.trim();
+  let txt=c.transcripcion||"(Sin transcripción)";
+  if(busq){
+    const re=new RegExp('('+escRe(busq)+')','gi');
+    txt=txt.replace(re,'<mark class="buscar-highlight">$1</mark>');
+    document.getElementById("ver-transcripcion").innerHTML=txt;
+  } else {
+    document.getElementById("ver-transcripcion").textContent=txt;
+  }
+  // Links
+  const linksEl=document.getElementById("ver-links");
+  linksEl.innerHTML="";
+  if(c.audio) linksEl.innerHTML+=`<a href="${c.audio}" target="_blank"
+    style="display:flex;align-items:center;gap:.4rem;color:var(--azul);font-size:.85rem;font-weight:600">
+    🎵 Escuchar grabación</a>`;
+  if(c.doclink) linksEl.innerHTML+=`<a href="${c.doclink}" target="_blank"
+    style="display:flex;align-items:center;gap:.4rem;color:var(--azul);font-size:.85rem;font-weight:600">
+    📄 Ver documento</a>`;
+  document.getElementById("ov-ver-consulta").classList.add("visible");
+}
+
+function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+window.buscarConsultas=()=>renderConsultas();
+
+function renderConsultas(){
+  const lista=document.getElementById("lista-consultas");
+  const busq=document.getElementById("consulta-buscar").value.trim().toLowerCase();
+  let consultas=loadConsultas();
+
+  if(busq){
+    consultas=consultas.filter(c=>
+      (c.transcripcion||"").toLowerCase().includes(busq)||
+      (c.motivo||"").toLowerCase().includes(busq)||
+      (c.lugar||"").toLowerCase().includes(busq)||
+      (c.paciente||"").toLowerCase().includes(busq)
+    );
+    document.getElementById("consultas-sec").textContent=
+      `${consultas.length} resultado${consultas.length!==1?"s":""} para "${busq}"`;
+  } else {
+    document.getElementById("consultas-sec").textContent="Todas las consultas";
+  }
+
+  if(!consultas.length){
+    lista.innerHTML=busq
+      ?'<div class="empty">Sin resultados para esa búsqueda.</div>'
+      :'<div class="empty">Sin consultas registradas.<br>Toca ＋ Nueva para agregar.</div>';
+    return;
+  }
+
+  // Índices reales en el array original para editar/ver
+  const allConsultas=loadConsultas();
+
+  lista.innerHTML=consultas.map(c=>{
+    const realIdx=allConsultas.indexOf(c);
+    const lugarIcon=c.tipoLugar==="hospital"?"🏥":c.tipoLugar==="clinica"?"🏨":
+      c.tipoLugar==="particular"?"👨‍⚕️":c.tipoLugar==="simi"?"💊":"📌";
+    // Preview con highlight
+    let preview=c.transcripcion?c.transcripcion.slice(0,120)+"…":"Sin transcripción";
+    if(busq){
+      const re=new RegExp('('+escRe(busq)+')','gi');
+      preview=preview.replace(re,'<mark class="buscar-highlight">$1</mark>');
+    }
+    return `<div class="consulta-card" onclick="verConsulta(${realIdx})">
+      <div class="consulta-top">
+        <div class="consulta-icon">${lugarIcon}</div>
+        <div style="flex:1">
+          <div class="consulta-nombre">${c.motivo||"Consulta"}</div>
+          <div class="consulta-meta">${c.fecha} · ${c.lugar||"Sin lugar"}</div>
+        </div>
+      </div>
+      <div class="consulta-chips">
+        <span class="consulta-chip">${c.paciente}</span>
+        ${c.audio?'<span class="consulta-chip" style="background:var(--azul-claro);color:var(--azul);border-color:#90caf9">🎵 Audio</span>':""}
+        ${c.doclink?'<span class="consulta-chip" style="background:var(--naranja-claro);color:var(--naranja);border-color:#ffcc80">📄 Doc</span>':""}
+      </div>
+      <div class="consulta-preview">${preview}</div>
+    </div>`;
+  }).join("");
+}
 
 /* ─── Init ──────────────────────────────────────────────────────────── */
 (function init(){
